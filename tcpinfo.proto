@@ -1,0 +1,247 @@
+// These protos should ONLY contain raw data from tcpinfo collection.
+// Meta-data, such as experiment name or collection time, and any data from
+// sources other than tcpinfo should be handles OUTSIDE these protos.
+
+syntax = "proto2";
+
+package mlab.tcp_info;
+
+/*
+   This is a work in progress.
+   Generally, this reflects the kernel's struct tcp_info.  However, we have
+   some flexibility to simplify some bits, largely from protobuf's has_xxx
+   functionality.  For example, some of the OPT_XXX flags in the options field
+   can be elided in this protobuf, because their values are reflected in
+   other fields, such as wscale fields.
+
+We should consider collecting any or all of the extensions identified in
+inet_diag.h Extensions:
+enum {
+        INET_DIAG_NONE,
+        INET_DIAG_MEMINFO,  // Done  (subset of skmeminfo)
+        INET_DIAG_INFO,     // Done
+        INET_DIAG_VEGASINFO,  // Done
+        INET_DIAG_CONG,  // Done - string field in top level message.
+        INET_DIAG_TOS,
+        INET_DIAG_TCLASS,
+        INET_DIAG_SKMEMINFO,  // Done
+        INET_DIAG_SHUTDOWN,
+        INET_DIAG_DCTCPINFO,  // Done
+        INET_DIAG_PROTOCOL,  // Done - string in top level message.
+        INET_DIAG_SKV6ONLY,
+        INET_DIAG_LOCALS,
+        INET_DIAG_PEERS,
+        INET_DIAG_PAD,
+        __INET_DIAG_MAX,
+};
+
+*/
+
+message EndPoint {
+  optional int32 port = 1;
+  optional bytes ip = 2;  // 4 or 16 bytes for ipv4 or ipv6 address.
+}
+
+message InetSocketIDProto {
+  optional EndPoint source = 1;
+  optional EndPoint destination = 2;
+  optional int32 interface = 5;
+  optional fixed64 cookie = 6;
+}
+
+message  InetDiagMsgProto {
+  enum AddressFamily {
+    AF_UNSPEC = 0;
+    AF_INET = 2;
+    AF_INET6 = 10;
+  }
+  // These are 8 bit unsigned.
+  optional AddressFamily family  = 1;
+
+  enum TCPState {  //  from tcp_states.h
+    ESTABLISHED = 1;
+    SYN_SENT    = 2;
+    SYN_RECV    = 3;
+    FIN_WAIT1   = 4;
+    FIN_WAIT2   = 5;
+    TIME_WAIT   = 6;
+    CLOSE       = 7;
+    CLOSE_WAIT  = 8;
+    LAST_ACK    = 9;
+    LISTEN      = 10;
+    CLOSING     = 11;    /* Now a valid state */
+  }
+  optional TCPState state = 2;  // TODO - is this the correct enum?
+  optional int32 timer    = 3;
+  optional int32 retrans  = 4;
+
+  optional InetSocketIDProto sock_id = 5;
+  optional int32 expires =  6;
+  optional int32 rqueue  =  7;
+  optional int32 wqueue  =  8;
+  optional int32 uid     =  9;
+  optional int32 inode   = 10;
+}
+
+// Proto representation for struct tcpvegas_info.
+message TCPVegasInfoProto {
+  // Note that tcpv_enabled is represented by the has_xxx in the parent.
+  optional int32 rttcnt = 1;
+  optional int32 rtt    = 2;
+  optional int32 minrtt = 3;
+}
+
+// Proto representation for struct tcp_dctcp_info.
+message DCTCPInfoProto {
+  // Note that dctcp_enabled is represented by the has_xxx in the parent.
+  optional int32 ce_state = 1;
+  optional int32 alpha    = 2;
+  optional int32 ab_ecn   = 3;
+  optional int32 ab_tot   = 4;
+}
+
+// Proto representation for struct tcp_dctcp_info or struct tcpvegas_info.
+// Proto for either INET_DIAG_SKMEMINFO, or INET_DIAG_MEMINFO.
+// TODO(gfr) Undecided about whether to use this for both, or have a
+// separate message type for INET_DIAG_MEMINFO.
+message SocketMemInfoProto {
+  optional int32 rmem_alloc = 1;  // idiag_rmem for INET_DIAG_INFO
+  optional int32 rcvbuf = 2;
+  optional int32 wmem_alloc = 3;  // idiag_wmem for INET_DIAG_INFO
+  optional int32 sndbuf = 4;
+  optional int32 fwd_alloc = 5;   // idiag_fmem for INET_DIAG_INFO
+  optional int32 wmem_queued = 6;
+  optional int32 optmem = 7;
+  optional int32 backlog = 8;
+
+  optional int32 tmem = 9;  // INET_DIAG_INFO only.
+}
+
+// This proto is intended to precisely represent the raw data from tcpinfo.
+// (Derived data will be represented in other protos.)
+message TCPInfoProto {
+  // state through rcv_wscale are 7 x _u8
+  // http://www.cs.northwestern.edu/~agupta/cs340/project2/TCPIP_State_Transition_Diagram.pdf
+  enum TCPState {  //  from tcp_states.h
+    ESTABLISHED = 1;
+    SYN_SENT    = 2;
+    SYN_RECV    = 3;
+    FIN_WAIT1   = 4;
+    FIN_WAIT2   = 5;
+    TIME_WAIT   = 6;
+    CLOSE       = 7;
+    CLOSE_WAIT  = 8;
+    LAST_ACK    = 9;
+    LISTEN      = 10;
+    CLOSING     = 11;    /* Now a valid state */
+  }
+  // TODO - should this actually be here?
+  optional TCPState state = 1;  // TCP FSM state, e.g. ESTABLISHED, FIN_WAIT_1, CLOSING
+
+  enum CAState {
+    TCPF_CA_Open = 1;
+    TCPF_CA_Disorder = 2;
+    TCPF_CA_CWR = 4;
+    TCPF_CA_Recovery = 8;
+    TCPF_CA_Loss = 16;
+  }
+  // bitwise OR of CAState enums.
+  optional int32 ca_state = 2;  // Maybe make this bools?
+
+  optional int32 retransmits = 3;
+  optional int32 probes =      4;
+  optional int32 backoff =     5;
+
+// #define TCPI_HAS_OPT(info, opt) !!(info->tcpi_options & (opt))
+  enum Options {
+    OPT_TIMESTAMPS = 1;
+    OPT_SACK =       2;
+    OPT_WSCALE =     4;
+    OPT_ECN =        8;
+    OPT_ECN_SEEN =  16;
+    OPT_SYN_DATA =  32;
+  }
+
+// We could optionally expand these into 6 bools.
+  optional int32  options = 6;
+  optional bool has_ts_opt = 601;
+  optional bool has_sack_opt = 602;
+  optional bool has_wscale_opt =  603;  // Or just use has_snd_wscale
+  optional bool has_ecn_opt = 604;
+  optional bool has_ecnseen_opt = 605;
+  optional bool has_fastopen_opt = 606;
+
+  optional int32  snd_wscale = 7;
+  optional int32  rcv_wscale = 8;
+
+  optional int32  rto =      9;
+  optional int32  ato =     10;
+  optional int32  snd_mss = 11;
+  optional int32  rcv_mss = 12;
+
+  optional int32  unacked = 13;
+  optional int32  sacked =  14;
+  optional int32  lost =    15;
+  optional int32  retrans = 16;
+  optional int32  fackets = 17;
+
+  /* Times. */
+  optional int32  last_data_sent = 18;  // msec ?
+  optional int32  last_ack_sent =  19;  // msec ?   /* Not remembered, sorry. */
+  optional int32  last_data_recv = 20;  // msec ?
+  optional int32  last_ack_recv =  21;  // msec ?
+
+  /* Metrics. */
+  optional int32  pmtu =         22;
+  optional int32  rcv_ssthresh = 23;
+  optional int32  rtt =          24;  // msec
+  optional int32  rttvar =       25;
+  optional int32  snd_ssthresh = 26;
+  optional int32  snd_cwnd =     27;
+  optional int32  advmss =       28;
+  optional int32  reordering =   29;
+
+  optional int32  rcv_rtt =   30;
+  optional int32  rcv_space = 31;
+
+  optional int32  total_retrans = 32;
+
+  // In tcp code, these four are 64 bit unsigned.
+  optional int64  pacing_rate =     33;
+  optional int64  max_pacing_rate = 34;
+  optional int64  bytes_acked =     35; /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
+  optional int64  bytes_received =  36; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
+
+  optional int32  segs_out = 37;       /* RFC4898 tcpEStatsPerfSegsOut */
+  optional int32  segs_in =  38;       /* RFC4898 tcpEStatsPerfSegsIn */
+
+  optional int32  notsent_bytes = 39;
+  optional int32  min_rtt =       40;
+  optional int32  data_segs_in =  41;     /* RFC4898 tcpEStatsDataSegsIn */
+  optional int32  data_segs_out = 42;     /* RFC4898 tcpEStatsDataSegsOut */
+}
+
+// Parent containing all info gathered through netlink library.
+message TCPDiagnosticsProto {
+  // Info from struct inet_diag_msg, including socket_id;
+  optional InetDiagMsgProto inet_diag_msg = 1;
+
+  // From INET_DIAG_PROTOCOL message.
+  optional string diag_protocol        = 2;
+  // From INET_DIAG_CONG message.
+  optional string congestion_algorithm = 3;
+
+  // Data from struct tcpvegas_info, related to Vegas congestion regulation.
+  // https://en.wikipedia.org/wiki/TCP_Vegas
+  optional TCPVegasInfoProto vegas     = 3;
+
+  // Data obtained from struct tcp_dctcp_info
+  optional DCTCPInfoProto dctcp        = 4;
+
+  // Data obtained from INET_DIAG_SKMEMINFO or INET_DIAG_MEMINFO
+  optional SocketMemInfoProto socket_mem = 5;
+
+  // All data obtained from struct tcp_info
+  optional TCPInfoProto tcp_info       = 6;
+}
+
