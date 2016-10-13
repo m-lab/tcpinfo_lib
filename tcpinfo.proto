@@ -117,11 +117,19 @@ message SocketMemInfoProto {
   optional int32 tmem = 9;  // INET_DIAG_INFO only.
 }
 
+// Proto for struct tcp_bbr_info when INET_DIAG_BBRINFO element is non-null.
+message BBRInfoProto {
+  optional int64 bw      = 1;  // Combines bbr_bw_lo and bbr_bw_hi
+  optional int32 min_rtt = 2;  // min-filtered RTT in uSec
+  optional int32 pacing_gain = 3;  // pacing gain shifted left 8 bits
+  optional int32 cwnd_gain = 4;  // cwnd gain shifted left 8 bits.
+}
+
 // This proto is intended to precisely represent the raw data from tcpinfo.
 // (Derived data will be represented in other protos.)
 message TCPInfoProto {
   // state through rcv_wscale are 7 x _u8
-  // http://www.cs.northwestern.edu/~agupta/cs340/project2/TCPIP_State_Transition_Diagram.pdf
+  // https://datatracker.ietf.org/doc/draft-ietf-tcpm-rfc793bis/
   enum TCPState {  //  from tcp_states.h
     ESTABLISHED = 1;
     SYN_SENT    = 2;
@@ -233,15 +241,18 @@ message TCPDiagnosticsProto {
 
   // Data from struct tcpvegas_info, related to Vegas congestion regulation.
   // https://en.wikipedia.org/wiki/TCP_Vegas
-  optional TCPVegasInfoProto vegas     = 3;
+  optional TCPVegasInfoProto vegas     = 4;
 
   // Data obtained from struct tcp_dctcp_info
-  optional DCTCPInfoProto dctcp        = 4;
+  optional DCTCPInfoProto dctcp        = 5;
 
   // Data obtained from INET_DIAG_SKMEMINFO or INET_DIAG_MEMINFO
-  optional SocketMemInfoProto socket_mem = 5;
+  optional SocketMemInfoProto socket_mem = 6;
 
-  // All data obtained from struct tcp_info
-  optional TCPInfoProto tcp_info       = 6;
+  // Data obtained from struct tcp_bbr_info
+  optional BBRInfoProto bbr_info       = 7;
+
+  // Data obtained from struct tcp_info
+  optional TCPInfoProto tcp_info       = 8;
 }
 
