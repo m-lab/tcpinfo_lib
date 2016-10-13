@@ -1,12 +1,12 @@
 // Up to date as of net-next e147161b1aa037a7150dc7c69d77f16ba6001717
 
-// These protos should ONLY contain raw data from tcpinfo collection.
+// These protos should ONLY contain raw data collected through netlink library.
 // Meta-data, such as experiment name or collection time, and any data from
 // sources other than tcpinfo should be handles OUTSIDE these protos.
 
 syntax = "proto2";
 
-package mlab.tcp_info;
+package mlab.netlink;
 
 /*
    This is a work in progress.
@@ -42,15 +42,35 @@ enum {
 */
 
 message EndPoint {
-  optional int32 port = 1;
+  optional uint32 port = 1;
   optional bytes ip = 2;  // 4 or 16 bytes for ipv4 or ipv6 address.
 }
 
+// Using slightly different structure than inet_diag.h.  Oddly, inet_diag.h
+// does not specify the connection family in the sockid struct, but instead
+// in the inet_diag_msg.  However, in proto land, we can additionally infer
+// the family from the number of bytes in EndPoint.ip.
 message InetSocketIDProto {
   optional EndPoint source = 1;
   optional EndPoint destination = 2;
-  optional int32 interface = 5;
+  optional uint32 interface = 5;
+  // Using fixed64, as this is more efficient for hashes, keys, cookies.
   optional fixed64 cookie = 6;
+}
+
+// https://datatracker.ietf.org/doc/draft-ietf-tcpm-rfc793bis/
+enum TCPState {  //  from tcp_states.h
+  ESTABLISHED = 1;
+  SYN_SENT    = 2;
+  SYN_RECV    = 3;
+  FIN_WAIT1   = 4;
+  FIN_WAIT2   = 5;
+  TIME_WAIT   = 6;
+  CLOSE       = 7;
+  CLOSE_WAIT  = 8;
+  LAST_ACK    = 9;
+  LISTEN      = 10;
+  CLOSING     = 11;    /* Now a valid state */
 }
 
 message  InetDiagMsgProto {
@@ -61,47 +81,34 @@ message  InetDiagMsgProto {
   }
   // These are 8 bit unsigned.
   optional AddressFamily family  = 1;
-
-  enum TCPState {  //  from tcp_states.h
-    ESTABLISHED = 1;
-    SYN_SENT    = 2;
-    SYN_RECV    = 3;
-    FIN_WAIT1   = 4;
-    FIN_WAIT2   = 5;
-    TIME_WAIT   = 6;
-    CLOSE       = 7;
-    CLOSE_WAIT  = 8;
-    LAST_ACK    = 9;
-    LISTEN      = 10;
-    CLOSING     = 11;    /* Now a valid state */
-  }
   optional TCPState state = 2;  // TODO - is this the correct enum?
-  optional int32 timer    = 3;
-  optional int32 retrans  = 4;
+
+  optional uint32 timer    = 3;
+  optional uint32 retrans  = 4;
 
   optional InetSocketIDProto sock_id = 5;
-  optional int32 expires =  6;
-  optional int32 rqueue  =  7;
-  optional int32 wqueue  =  8;
-  optional int32 uid     =  9;
-  optional int32 inode   = 10;
+  optional uint32 expires =  6;
+  optional uint32 rqueue  =  7;
+  optional uint32 wqueue  =  8;
+  optional uint32 uid     =  9;
+  optional uint32 inode   = 10;
 }
 
 // Proto representation for struct tcpvegas_info.
 message TCPVegasInfoProto {
   // Note that tcpv_enabled is represented by the has_xxx in the parent.
-  optional int32 rttcnt = 1;
-  optional int32 rtt    = 2;
-  optional int32 minrtt = 3;
+  optional uint32 rttcnt = 1;
+  optional uint32 rtt    = 2;
+  optional uint32 minrtt = 3;
 }
 
 // Proto representation for struct tcp_dctcp_info.
 message DCTCPInfoProto {
   // Note that dctcp_enabled is represented by the has_xxx in the parent.
-  optional int32 ce_state = 1;
-  optional int32 alpha    = 2;
-  optional int32 ab_ecn   = 3;
-  optional int32 ab_tot   = 4;
+  optional uint32 ce_state = 1;
+  optional uint32 alpha    = 2;
+  optional uint32 ab_ecn   = 3;
+  optional uint32 ab_tot   = 4;
 }
 
 // Proto representation for struct tcp_dctcp_info or struct tcpvegas_info.
@@ -109,44 +116,30 @@ message DCTCPInfoProto {
 // TODO(gfr) Undecided about whether to use this for both, or have a
 // separate message type for INET_DIAG_MEMINFO.
 message SocketMemInfoProto {
-  optional int32 rmem_alloc = 1;  // idiag_rmem for INET_DIAG_INFO
-  optional int32 rcvbuf = 2;
-  optional int32 wmem_alloc = 3;  // idiag_wmem for INET_DIAG_INFO
-  optional int32 sndbuf = 4;
-  optional int32 fwd_alloc = 5;   // idiag_fmem for INET_DIAG_INFO
-  optional int32 wmem_queued = 6;
-  optional int32 optmem = 7;
-  optional int32 backlog = 8;
+  optional uint32 rmem_alloc = 1;  // idiag_rmem for INET_DIAG_INFO
+  optional uint32 rcvbuf = 2;
+  optional uint32 wmem_alloc = 3;  // idiag_wmem for INET_DIAG_INFO
+  optional uint32 sndbuf = 4;
+  optional uint32 fwd_alloc = 5;   // idiag_fmem for INET_DIAG_INFO
+  optional uint32 wmem_queued = 6;
+  optional uint32 optmem = 7;
+  optional uint32 backlog = 8;
 
-  optional int32 tmem = 9;  // INET_DIAG_INFO only.
+  optional uint32 tmem = 9;  // INET_DIAG_INFO only.
 }
 
 // Proto for struct tcp_bbr_info when INET_DIAG_BBRINFO element is non-null.
 message BBRInfoProto {
-  optional int64 bw      = 1;  // Combines bbr_bw_lo and bbr_bw_hi
-  optional int32 min_rtt = 2;  // min-filtered RTT in uSec
-  optional int32 pacing_gain = 3;  // pacing gain shifted left 8 bits
-  optional int32 cwnd_gain = 4;  // cwnd gain shifted left 8 bits.
+  optional uint64 bw      = 1;  // Combines bbr_bw_lo and bbr_bw_hi
+  optional uint32 min_rtt = 2;  // min-filtered RTT in uSec
+  optional uint32 pacing_gain = 3;  // pacing gain shifted left 8 bits
+  optional uint32 cwnd_gain = 4;  // cwnd gain shifted left 8 bits.
 }
 
 // This proto is intended to precisely represent the raw data from tcpinfo.
 // (Derived data will be represented in other protos.)
 message TCPInfoProto {
   // state through rcv_wscale are 7 x _u8
-  // https://datatracker.ietf.org/doc/draft-ietf-tcpm-rfc793bis/
-  enum TCPState {  //  from tcp_states.h
-    ESTABLISHED = 1;
-    SYN_SENT    = 2;
-    SYN_RECV    = 3;
-    FIN_WAIT1   = 4;
-    FIN_WAIT2   = 5;
-    TIME_WAIT   = 6;
-    CLOSE       = 7;
-    CLOSE_WAIT  = 8;
-    LAST_ACK    = 9;
-    LISTEN      = 10;
-    CLOSING     = 11;    /* Now a valid state */
-  }
   // TODO - should this actually be here?
   optional TCPState state = 1;  // TCP FSM state, e.g. ESTABLISHED, FIN_WAIT_1, CLOSING
 
@@ -158,11 +151,11 @@ message TCPInfoProto {
     TCPF_CA_Loss = 16;
   }
   // bitwise OR of CAState enums.
-  optional int32 ca_state = 2;  // Maybe make this bools?
+  optional uint32 ca_state = 2;  // Maybe make this bools?
 
-  optional int32 retransmits = 3;
-  optional int32 probes =      4;
-  optional int32 backoff =     5;
+  optional uint32 retransmits = 3;
+  optional uint32 probes =      4;
+  optional uint32 backoff =     5;
 
 // #define TCPI_HAS_OPT(info, opt) !!(info->tcpi_options & (opt))
   enum Options {
@@ -174,67 +167,72 @@ message TCPInfoProto {
     OPT_SYN_DATA =  32;
   }
 
-// We could optionally expand these into 6 bools.
-  optional int32  options = 6;
-  optional bool has_ts_opt = 601;
-  optional bool has_sack_opt = 602;
-  optional bool has_wscale_opt =  603;  // Or just use has_snd_wscale
-  optional bool has_ecn_opt = 604;
-  optional bool has_ecnseen_opt = 605;
-  optional bool has_fastopen_opt = 606;
+  optional uint32  options = 6;
 
-  optional bool delivery_rate_app_limited = 690;
+  // Here are the 6 OPTs broken out as bools.
+  optional bool ts_opt = 601;
+  optional bool sack_opt = 602;
+  // wscale_opt determines whether snd_wscale and rcv_wscale are populated.
+  // So this is actually redundant with has_snd_wscale and has_rcv_wscale.
+  optional bool wscale_opt =  603;
+  optional bool ecn_opt = 604;
+  optional bool ecnseen_opt = 605;
+  optional bool fastopen_opt = 606;
 
-  optional int32  snd_wscale = 7;
-  optional int32  rcv_wscale = 8;
+  optional uint32  snd_wscale = 7;
+  optional uint32  rcv_wscale = 8;
 
-  optional int32  rto =      9;
-  optional int32  ato =     10;
-  optional int32  snd_mss = 11;
-  optional int32  rcv_mss = 12;
+  // This field was recently added as an eighth u8 immediately following
+  // tcpi_xxx_wscale bit fields, so inserting it here.
+  optional bool delivery_rate_app_limited = 801;
 
-  optional int32  unacked = 13;
-  optional int32  sacked =  14;
-  optional int32  lost =    15;
-  optional int32  retrans = 16;
-  optional int32  fackets = 17;
+  optional uint32  rto =      9;
+  optional uint32  ato =     10;
+  optional uint32  snd_mss = 11;
+  optional uint32  rcv_mss = 12;
+
+  optional uint32  unacked = 13;
+  optional uint32  sacked =  14;
+  optional uint32  lost =    15;
+  optional uint32  retrans = 16;
+  optional uint32  fackets = 17;
 
   /* Times. */
-  optional int32  last_data_sent = 18;  // msec ?
-  optional int32  last_ack_sent =  19;  // msec ?   /* Not remembered, sorry. */
-  optional int32  last_data_recv = 20;  // msec ?
-  optional int32  last_ack_recv =  21;  // msec ?
+  optional uint32  last_data_sent = 18;  // msec ?
+  optional uint32  last_ack_sent =  19;  // msec ?   /* Not remembered, sorry. */
+  optional uint32  last_data_recv = 20;  // msec ?
+  optional uint32  last_ack_recv =  21;  // msec ?
 
   /* Metrics. */
-  optional int32  pmtu =         22;
-  optional int32  rcv_ssthresh = 23;
-  optional int32  rtt =          24;  // msec
-  optional int32  rttvar =       25;
-  optional int32  snd_ssthresh = 26;
-  optional int32  snd_cwnd =     27;
-  optional int32  advmss =       28;
-  optional int32  reordering =   29;
+  optional uint32  pmtu =         22;
+  optional uint32  rcv_ssthresh = 23;
+  optional uint32  rtt =          24;  // msec
+  optional uint32  rttvar =       25;
+  optional uint32  snd_ssthresh = 26;
+  optional uint32  snd_cwnd =     27;
+  optional uint32  advmss =       28;
+  optional uint32  reordering =   29;
 
-  optional int32  rcv_rtt =   30;
-  optional int32  rcv_space = 31;
+  optional uint32  rcv_rtt =   30;
+  optional uint32  rcv_space = 31;
 
-  optional int32  total_retrans = 32;
+  optional uint32  total_retrans = 32;
 
   // In tcp code, these four are 64 bit unsigned.
-  optional int64  pacing_rate =     33;
-  optional int64  max_pacing_rate = 34;
-  optional int64  bytes_acked =     35; /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
-  optional int64  bytes_received =  36; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
+  optional uint64  pacing_rate =     33;
+  optional uint64  max_pacing_rate = 34;
+  optional uint64  bytes_acked =     35; /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
+  optional uint64  bytes_received =  36; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
 
-  optional int32  segs_out = 37;       /* RFC4898 tcpEStatsPerfSegsOut */
-  optional int32  segs_in =  38;       /* RFC4898 tcpEStatsPerfSegsIn */
+  optional uint32  segs_out = 37;       /* RFC4898 tcpEStatsPerfSegsOut */
+  optional uint32  segs_in =  38;       /* RFC4898 tcpEStatsPerfSegsIn */
 
-  optional int32  notsent_bytes = 39;
-  optional int32  min_rtt =       40;
-  optional int32  data_segs_in =  41;     /* RFC4898 tcpEStatsDataSegsIn */
-  optional int32  data_segs_out = 42;     /* RFC4898 tcpEStatsDataSegsOut */
+  optional uint32  notsent_bytes = 39;
+  optional uint32  min_rtt =       40;
+  optional uint32  data_segs_in =  41;     /* RFC4898 tcpEStatsDataSegsIn */
+  optional uint32  data_segs_out = 42;     /* RFC4898 tcpEStatsDataSegsOut */
 
-  optional int64  delivery_rate = 43;
+  optional uint64  delivery_rate = 43;
 
 }
 
