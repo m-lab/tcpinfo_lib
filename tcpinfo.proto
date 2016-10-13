@@ -1,3 +1,5 @@
+// Up to date as of net-next e147161b1aa037a7150dc7c69d77f16ba6001717
+
 // These protos should ONLY contain raw data from tcpinfo collection.
 // Meta-data, such as experiment name or collection time, and any data from
 // sources other than tcpinfo should be handles OUTSIDE these protos.
@@ -32,6 +34,8 @@ enum {
         INET_DIAG_LOCALS,
         INET_DIAG_PEERS,
         INET_DIAG_PAD,
+        INET_DIAG_MARK,   // NEW - should we include this???
+        INET_DIAG_BBRINFO,  // NEW Done.
         __INET_DIAG_MAX,
 };
 
@@ -179,6 +183,8 @@ message TCPInfoProto {
   optional bool has_ecnseen_opt = 605;
   optional bool has_fastopen_opt = 606;
 
+  optional bool delivery_rate_app_limited = 690;
+
   optional int32  snd_wscale = 7;
   optional int32  rcv_wscale = 8;
 
@@ -227,6 +233,9 @@ message TCPInfoProto {
   optional int32  min_rtt =       40;
   optional int32  data_segs_in =  41;     /* RFC4898 tcpEStatsDataSegsIn */
   optional int32  data_segs_out = 42;     /* RFC4898 tcpEStatsDataSegsOut */
+
+  optional int64  delivery_rate = 43;
+
 }
 
 // Parent containing all info gathered through netlink library.
@@ -239,20 +248,19 @@ message TCPDiagnosticsProto {
   // From INET_DIAG_CONG message.
   optional string congestion_algorithm = 3;
 
-  // Data from struct tcpvegas_info, related to Vegas congestion regulation.
-  // https://en.wikipedia.org/wiki/TCP_Vegas
+  // The following three are mutually exclusive, as they provide
+  // data from different congestion control strategies.
+  // Data obtained from struct tcpvegas_info.
   optional TCPVegasInfoProto vegas     = 4;
-
-  // Data obtained from struct tcp_dctcp_info
+  // Data obtained from struct tcp_dctcp_info.
   optional DCTCPInfoProto dctcp        = 5;
+  // Data obtained from struct tcp_bbr_info.
+  optional BBRInfoProto bbr_info       = 6;
 
-  // Data obtained from INET_DIAG_SKMEMINFO or INET_DIAG_MEMINFO
-  optional SocketMemInfoProto socket_mem = 6;
+  // Data obtained from INET_DIAG_SKMEMINFO or INET_DIAG_MEMINFO.
+  optional SocketMemInfoProto socket_mem = 7;
 
-  // Data obtained from struct tcp_bbr_info
-  optional BBRInfoProto bbr_info       = 7;
-
-  // Data obtained from struct tcp_info
+  // Data obtained from struct tcp_info.
   optional TCPInfoProto tcp_info       = 8;
 }
 
