@@ -5,10 +5,11 @@ NDT and Sidestream both will require functionality related to but not entirely p
 
 # Dependency on iproute2
 Two CMake files are provided that include rules to download and build the
-net-next branch of the iproute2 tools.  You will need cmake installed, and after
-cloning the repository, do:
+net-next branch of the iproute2 tools.  You will need cmake installed, and after cloning the repository, do:
+```
+  mkdir build
   cd build
   cmake ..
   make
-When make finishes, there should be an iproute2 directory, and make should have
-successfully build all targets under iproute2.
+```
+When make finishes, there should be an iproute2 directory, and make should have successfully build all targets under iproute2.
