@@ -27,7 +27,6 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(iproute2 source_dir)
-MESSAGE("iproute2 source_dir: " ${source_dir})
 
 # Required to fix xtables related build bug.
 ExternalProject_Add_Step(iproute2 xtables-fix
