@@ -9,11 +9,13 @@ ExternalProject_Add(
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
 
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/iproute2"
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
 
   CONFIGURE_COMMAND
       ./configure
 
+  # Unfortunately, we have to build in the source directory, because of
+  # ./configure
   BUILD_IN_SOURCE 1
 
   BUILD_COMMAND
