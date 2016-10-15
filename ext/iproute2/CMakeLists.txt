@@ -1,8 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
-ExternalProject_Add(
-  iproute2
-
+ExternalProject_Add(iproute2
   GIT_REPOSITORY "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git"
   GIT_TAG "net-next"
 

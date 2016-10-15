@@ -22,7 +22,10 @@ find_package(Threads REQUIRED)
 add_subdirectory(${PROJECT_SOURCE_DIR}/ext/iproute2)
 
 ################### protobuf compiler ########################
-find_package(Protobuf REQUIRED)
+find_package(Protobuf)
+if (PROTOBUF_FOUND)
+	add_subdirectory(${PROJECT_SOURCE_DIR}/ext/protobuf)
+endif()
 
 if (CMAKE_COMPILER_IS_GNUXX)
   add_definitions(-Wall -ansi -Wno-deprecated -pthread)
