@@ -6,6 +6,7 @@ include(ExternalProject)
 #set(GTEST_DISABLE_PTHREADS OFF)
 
 ExternalProject_Add(googletest
+	DEPENDS iproute2 # TODO - not really the right place for this.
     GIT_REPOSITORY https://github.com/google/googletest.git
     CMAKE_ARGS
     #    -Dgtest_force_shared_crt=${GTEST_FORCE_SHARED_CRT}
