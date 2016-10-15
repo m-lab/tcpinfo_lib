@@ -7,6 +7,10 @@ ENABLE_LANGUAGE(C)
 ENABLE_LANGUAGE(CXX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+if (CMAKE_COMPILER_IS_GNUXX)
+  add_definitions(-Wall -ansi -Wno-deprecated -pthread)
+endif()
+
 
 set(PROJECT_NAME_STR tcpinfo_lib)
 
@@ -23,12 +27,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/ext/iproute2)
 
 ################### protobuf compiler ########################
 find_package(Protobuf)
-if (PROTOBUF_FOUND)
+if (NOT PROTOBUF_FOUND)
 	add_subdirectory(${PROJECT_SOURCE_DIR}/ext/protobuf)
-endif()
-
-if (CMAKE_COMPILER_IS_GNUXX)
-  add_definitions(-Wall -ansi -Wno-deprecated -pthread)
 endif()
 
 
