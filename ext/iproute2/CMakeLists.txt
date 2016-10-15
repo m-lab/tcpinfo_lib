@@ -7,7 +7,8 @@ ExternalProject_Add(iproute2
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
 
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build"
+  PREFIX "${CMAKE_CURRENT_BINARY_DIR}"
+  # SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build"
 
   CONFIGURE_COMMAND
       ./configure
@@ -28,9 +29,9 @@ ExternalProject_Get_Property(iproute2 source_dir)
 
 # Required to fix xtables related build bug.
 ExternalProject_Add_Step(iproute2 xtables-fix
-	WORKING_DIRECTORY ${SOURCE_DIR}
+	WORKING_DIRECTORY ${source_dir}
 	COMMENT
-	    source dir is ${SOURCE_DIR}
+	    source dir is ${source_dir}
 	COMMAND
 	    touch <SOURCE_DIR>/include/xtables-version.h
 	DEPENDERS build
