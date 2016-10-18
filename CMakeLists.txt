@@ -36,7 +36,7 @@ set(PROJECT_TEST_NAME ${PROJECT_NAME_STR}_test)
 include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
-add_executable(${PROJECT_TEST_NAME} ${SRC_DIR}/cpp_sorter_test.cc)
+add_executable(${PROJECT_TEST_NAME} ${SRC_DIR}/empty_test.cc)
 add_dependencies(${PROJECT_TEST_NAME} googletest)
 
 target_link_libraries(${PROJECT_TEST_NAME}
