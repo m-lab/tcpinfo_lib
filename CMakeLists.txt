@@ -1,5 +1,22 @@
 cmake_minimum_required (VERSION 2.8.6)
 
+############### Source Tree Overview ######################
+# ├── build
+# ├── CMakeLists.txt
+# ├── ext
+# │   ├── gtest
+# │   │   └── CMakeLists.txt
+# │   ├── iproute2
+# │   │   └── CMakeLists.txt
+# │   └── protobuf
+# │       └── CMakeLists.txt
+# ├── install-protobuf.sh
+# ├── LICENSE
+# ├── README.md
+# └── src
+#     ├── tcpinfo.proto
+#     └── tcpinfo_proto_test.cc
+
 # Note that these must precede the ENABLE_LANGUAGE statements.
 set(CMAKE_C_COMPILER "/usr/bin/clang")
 set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
@@ -7,15 +24,11 @@ ENABLE_LANGUAGE(C)
 ENABLE_LANGUAGE(CXX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-if (CMAKE_COMPILER_IS_GNUXX)
-  add_definitions(-Wall -ansi -Wno-deprecated -pthread)
-endif()
 
 # This allows the external project to push and pop environment.
 cmake_policy(SET CMP0011 OLD)
 include(ExternalProject)
 
-find_package(Threads REQUIRED)
 
 ################### project settings ########################
 set(PROJECT_NAME_STR tcpinfo_lib)
@@ -26,6 +39,7 @@ set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(${PROJECT_SOURCE_DIR}/ext/iproute2)
 
 ################### protobuf compiler ########################
+find_package(Threads REQUIRED)
 find_package(Protobuf)
 if (NOT PROTOBUF_FOUND)
 	add_subdirectory(${PROJECT_SOURCE_DIR}/ext/protobuf)
