@@ -9,11 +9,13 @@ ExternalProject_Add(
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
 
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/iproute2"
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build"
 
   CONFIGURE_COMMAND
       ./configure
 
+  # Unfortunately, we have to build in the source directory, because of
+  # ./configure
   BUILD_IN_SOURCE 1
 
   BUILD_COMMAND
@@ -23,6 +25,8 @@ ExternalProject_Add(
 
   TEST_COMMAND ""
 )
+
+ExternalProject_Get_Property(iproute2 source_dir)
 
 # Required to fix xtables related build bug.
 ExternalProject_Add_Step(iproute2 xtables-fix
