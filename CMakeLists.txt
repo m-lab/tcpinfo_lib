@@ -68,8 +68,9 @@ add_library(${PROJECT_NAME}
 set(PROJECT_TEST_NAME ${PROJECT_NAME_STR}_test)
 include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
 
-add_executable(${PROJECT_TEST_NAME} ${SRC_DIR}/tcpinfo_proto_test.cc)
-add_dependencies(${PROJECT_TEST_NAME} googletest tcpinfo_lib)
+set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
+add_executable(${PROJECT_TEST_NAME} ${SRC_DIR}/empty_test.cc)
+add_dependencies(${PROJECT_TEST_NAME} googletest)
 
 target_link_libraries(${PROJECT_TEST_NAME}
     ${GTEST_LIBS_DIR}/libgtest.a
