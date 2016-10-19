@@ -42,7 +42,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/ext/iproute2)
 find_package(Threads REQUIRED)
 find_package(Protobuf)
 if (NOT PROTOBUF_FOUND)
-	add_subdirectory(${PROJECT_SOURCE_DIR}/ext/protobuf)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/ext/protobuf)
 endif()
 
 include_directories(${PROTOBUF_INCLUDE_DIRS})
@@ -60,17 +60,20 @@ enable_testing()
 
 ################### tcpinfo library  ########################
 
-PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${SRC_DIR}/tcpinfo.proto)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
+    ${SRC_DIR}/tcpinfo.proto)
 add_library(${PROJECT_NAME}
-	${PROTO_HDRS} ${PROTO_SRCS})
+    ${PROTO_HDRS} ${PROTO_SRCS})
 
 ################### unit tests ########################
 set(PROJECT_TEST_NAME ${PROJECT_NAME_STR}_test)
 include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
-add_executable(${PROJECT_TEST_NAME} ${SRC_DIR}/empty_test.cc)
+add_executable(${PROJECT_TEST_NAME}
+    ${SRC_DIR}/empty_test.cc)
 add_dependencies(${PROJECT_TEST_NAME} googletest)
+# add_dependencies(${PROJECT_TEST_NAME} iproute2)
 
 target_link_libraries(${PROJECT_TEST_NAME}
     ${GTEST_LIBS_DIR}/libgtest.a
