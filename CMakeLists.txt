@@ -71,7 +71,7 @@ include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 add_executable(${PROJECT_TEST_NAME}
-    ${SRC_DIR}/empty_test.cc)
+    ${SRC_DIR}/tcpinfo_proto_test.cc)
 add_dependencies(${PROJECT_TEST_NAME} googletest)
 # add_dependencies(${PROJECT_TEST_NAME} iproute2)
 
