@@ -63,6 +63,7 @@ enable_testing()
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
     ${SRC_DIR}/tcpinfo.proto)
 add_library(${PROJECT_NAME}
+    ${SRC_DIR}/tcpinfo_lib.cc ${SRC_DIR}/tcpinfo_lib.h
     ${PROTO_HDRS} ${PROTO_SRCS})
 
 ################### unit tests ########################

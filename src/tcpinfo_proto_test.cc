@@ -13,5 +13,7 @@ TEST(tcpinfo_proto, has_some_fields) {
   EXPECT_EQ(proto.diag_protocol(), "foobar");
 }
 
+TEST(tcpinfo_lib, parse_msg) {
+
 }
 }

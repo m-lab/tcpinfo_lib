@@ -45,17 +45,21 @@ namespace netlink {
 class TCPInfoParser {
  public:
   // <msg> ownership NOT transfered.
-  TCPDiagnosticsProto ParseNLMsg(const struct nlmsghdr* msg);
+  TCPDiagnosticsProto ParseNLMsg(const struct nlmsghdr* msg) const;
 
   // <msg> ownership NOT transfered.
-  void NLMsgToProto(const struct nlmsghdr* msg, TCPDiagnosticsProto* proto);
+  void NLMsgToProto(const struct nlmsghdr* msg,
+                    TCPDiagnosticsProto* proto) const;
 };
 
 // A connection filter checks whether a connection should be reported or not.
 class ConnectionFilter {
  public:
-  bool Accept(const mlab::netlink::InetSocketIDProto& socket);
-  bool Accept(const struct nlmsghdr* msg);
+  // Token to be used for removing filters.
+  struct Token{};
+
+  bool Accept(const mlab::netlink::InetSocketIDProto& socket) const;
+  bool Accept(const struct nlmsghdr* msg) const;
 };
 
 // Instance that polls the status of TCP connections, and calls a handler on
@@ -70,13 +74,10 @@ class ConnectionFilter {
 // Handler to be called when an event occurs.
 // Message ownership is NOT transfered, and handler code should not retain
 // references to the message after returning.
-using Handler = std::function<void (struct nlmsghdr* msg)>;
-
-// Token for later removing a filter.
-struct FilterToken {};
 
 class TCPInfoPoller {
  public:
+  using Handler = std::function<void (const struct nlmsghdr* msg)>;
 
   // Request netlink data once, run any triggered behaviors, and update the
   // data cache.
@@ -93,7 +94,7 @@ class TCPInfoPoller {
   // Remove all whitelist filters.
   void ClearFilters();
   // Remove a single whitelist filter.
-  bool ClearFilter(FilterToken token);
+  bool ClearFilter(ConnectionFilter::Token token);
 
   // This adds a filter for a specific handler.  Each connection accepted by
   // this filter will be handled by on_close or on_change.  This does NOT
@@ -102,13 +103,14 @@ class TCPInfoPoller {
   // For example, if we want to collect all polled data on a specific tuple
   // for NDT, we could specify the filter for that tuple, and an on_change
   // handler that reports the desired NDT data.
-  FilterToken AddFilter(ConnectionFilter filter, Handler on_close, Handler on_change);
+  ConnectionFilter::Token AddFilter(ConnectionFilter filter,
+                                 Handler on_close, Handler on_change);
 
   // This adds a filter that allows some connections to be reported by the
   // default OnClose or OnChange handler.  Reporting will trigger for any
   // connection that is accepted by ANY of the filters added through this
-  // function.
-  FilterToken AddFilter(ConnectionFilter filter);
+  // function.  Connections that do not match any filters are ignored.
+  ConnectionFilter::Token AddFilter(ConnectionFilter filter);
 
   // Specify handlers that will be run on any events that do not match any of
   // the tuple filters.
