@@ -45,10 +45,11 @@ namespace netlink {
 class TCPInfoParser {
  public:
   // <msg> ownership NOT transfered.
-  TCPDiagnosticsProto ParseNLMsg(const struct nlmsghdr* msg) const;
+  TCPDiagnosticsProto ParseNLMsg(const struct nlmsghdr* msg,
+                                 int protocol) const;
 
   // <msg> ownership NOT transfered.
-  void NLMsgToProto(const struct nlmsghdr* msg,
+  void NLMsgToProto(const struct nlmsghdr* msg, int protocol,
                     TCPDiagnosticsProto* proto) const;
 };
 

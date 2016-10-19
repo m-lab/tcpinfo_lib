@@ -24,8 +24,8 @@ namespace netlink {
 TEST(tcpinfo_proto, has_some_fields) {
   TCPDiagnosticsProto proto;
 
-  proto.set_diag_protocol("foobar");
-  EXPECT_EQ(proto.diag_protocol(), "foobar");
+  proto.set_diag_protocol(Protocol(6));
+  EXPECT_EQ(proto.diag_protocol(), Protocol::IPPROTO_TCP);
 }
 
 }  // namespace netlink
