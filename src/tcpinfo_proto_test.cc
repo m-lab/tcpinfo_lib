@@ -14,6 +14,8 @@ TEST(tcpinfo_proto, has_some_fields) {
 }
 
 TEST(tcpinfo_lib, parse_msg) {
+  EXPECT_TRUE(false);
+}
 
-}
-}
+}  // namespace netlink
+}  // namespace mlab
