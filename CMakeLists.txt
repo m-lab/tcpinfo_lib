@@ -1,22 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
 
-############### Source Tree Overview ######################
-# ├── build
-# ├── CMakeLists.txt
-# ├── ext
-# │   ├── gtest
-# │   │   └── CMakeLists.txt
-# │   ├── iproute2
-# │   │   └── CMakeLists.txt
-# │   └── protobuf
-# │       └── CMakeLists.txt
-# ├── install-protobuf.sh
-# ├── LICENSE
-# ├── README.md
-# └── src
-#     ├── tcpinfo.proto
-#     └── tcpinfo_proto_test.cc
-
 # Note that these must precede the ENABLE_LANGUAGE statements.
 set(CMAKE_C_COMPILER "/usr/bin/clang")
 set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
