@@ -18,13 +18,13 @@ namespace mlab {
 namespace netlink {
 
 TCPDiagnosticsProto TCPInfoParser::ParseNLMsg(
-    const struct nlmsghdr* msg, int protocol) const {
+    const struct nlmsghdr* msg, Protocol protocol) const {
   TCPDiagnosticsProto proto;
   NLMsgToProto(msg, protocol, &proto);
-  return std::move(proto);
+  return proto;
 }
 
-void TCPInfoParser::NLMsgToProto(const struct nlmsghdr* nlh, int protocol,
+void TCPInfoParser::NLMsgToProto(const struct nlmsghdr* nlh, Protocol protocol,
                                  TCPDiagnosticsProto* proto) const {
 }
 
@@ -55,8 +55,8 @@ ConnectionFilter::Token TCPInfoPoller::AddFilter(ConnectionFilter filter) {
   return ConnectionFilter::Token();
 }
 
-void TCPInfoPoller::OnClose(Handler& handler) {}
-void TCPInfoPoller::OnChange(Handler& handler) {}
+void TCPInfoPoller::OnClose(Handler handler) {}
+void TCPInfoPoller::OnChange(Handler handler) {}
 
 } // namespace netlink
 } // namespace mlab

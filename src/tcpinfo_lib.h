@@ -46,10 +46,10 @@ class TCPInfoParser {
  public:
   // <msg> ownership NOT transfered.
   TCPDiagnosticsProto ParseNLMsg(const struct nlmsghdr* msg,
-                                 int protocol) const;
+                                 Protocol protocol) const;
 
   // <msg> ownership NOT transfered.
-  void NLMsgToProto(const struct nlmsghdr* msg, int protocol,
+  void NLMsgToProto(const struct nlmsghdr* msg, Protocol protocol,
                     TCPDiagnosticsProto* proto) const;
 };
 
@@ -115,8 +115,8 @@ class TCPInfoPoller {
 
   // Specify handlers that will be run on any events that do not match any of
   // the tuple filters.
-  void OnClose(Handler& handler);
-  void OnChange(Handler& handler);
+  void OnClose(Handler handler);
+  void OnChange(Handler handler);
 
 };
 
