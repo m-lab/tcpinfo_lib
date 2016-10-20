@@ -1,22 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
 
-############### Source Tree Overview ######################
-# ├── build
-# ├── CMakeLists.txt
-# ├── ext
-# │   ├── gtest
-# │   │   └── CMakeLists.txt
-# │   ├── iproute2
-# │   │   └── CMakeLists.txt
-# │   └── protobuf
-# │       └── CMakeLists.txt
-# ├── install-protobuf.sh
-# ├── LICENSE
-# ├── README.md
-# └── src
-#     ├── tcpinfo.proto
-#     └── tcpinfo_proto_test.cc
-
 # Note that these must precede the ENABLE_LANGUAGE statements.
 set(CMAKE_C_COMPILER "/usr/bin/clang")
 set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
@@ -63,6 +46,7 @@ enable_testing()
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
     ${SRC_DIR}/tcpinfo.proto)
 add_library(${PROJECT_NAME}
+    ${SRC_DIR}/tcpinfo_lib.cc ${SRC_DIR}/tcpinfo_lib.h
     ${PROTO_HDRS} ${PROTO_SRCS})
 
 ################### unit tests ########################
@@ -71,7 +55,7 @@ include_directories(${GTEST_INCLUDE_DIRS} ${COMMON_INCLUDES})
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 add_executable(${PROJECT_TEST_NAME}
-    ${SRC_DIR}/empty_test.cc)
+    ${SRC_DIR}/tcpinfo_proto_test.cc)
 add_dependencies(${PROJECT_TEST_NAME} googletest)
 # add_dependencies(${PROJECT_TEST_NAME} iproute2)
 

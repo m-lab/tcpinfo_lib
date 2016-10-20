@@ -236,13 +236,19 @@ message TCPInfoProto {
 
 }
 
+enum Protocol {
+  IPPROTO_TCP = 6;
+  IPPROTO_UDP = 17;
+  IPPROTO_DCCP = 33;
+}
+
 // Parent containing all info gathered through netlink library.
 message TCPDiagnosticsProto {
   // Info from struct inet_diag_msg, including socket_id;
   optional InetDiagMsgProto inet_diag_msg = 1;
 
   // From INET_DIAG_PROTOCOL message.
-  optional string diag_protocol        = 2;
+  optional Protocol diag_protocol        = 2;
   // From INET_DIAG_CONG message.
   optional string congestion_algorithm = 3;
 
