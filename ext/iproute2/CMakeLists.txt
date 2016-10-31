@@ -34,3 +34,13 @@ ExternalProject_Add_Step(iproute2 xtables-fix
     DEPENDERS build
     DEPENDEES configure
     )
+
+# Export include path
+ExternalProject_Get_Property(iproute2 source_dir)
+set(IPROUTE2_INCLUDE_DIRS
+    ${source_dir}/include PARENT_SCOPE)
+
+# Export library path
+ExternalProject_Get_Property(iproute2 binary_dir)
+set(IPROUTE2_LIBS_DIR
+    ${binary_dir}/lib PARENT_SCOPE)

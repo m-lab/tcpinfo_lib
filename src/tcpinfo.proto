@@ -116,16 +116,17 @@ message DCTCPInfoProto {
 // TODO(gfr) Undecided about whether to use this for both, or have a
 // separate message type for INET_DIAG_MEMINFO.
 message SocketMemInfoProto {
-  optional uint32 rmem_alloc = 1;  // idiag_rmem for INET_DIAG_INFO
+  optional uint32 rmem_alloc = 1;  // idiag_rmem for INET_DIAG_MEMINFO
   optional uint32 rcvbuf = 2;
-  optional uint32 wmem_alloc = 3;  // idiag_wmem for INET_DIAG_INFO
+  optional uint32 wmem_alloc = 3;  // idiag_wmem for INET_DIAG_MEMINFO
   optional uint32 sndbuf = 4;
-  optional uint32 fwd_alloc = 5;   // idiag_fmem for INET_DIAG_INFO
+  optional uint32 fwd_alloc = 5;   // idiag_fmem for INET_DIAG_MEMINFO
   optional uint32 wmem_queued = 6;
   optional uint32 optmem = 7;
   optional uint32 backlog = 8;
+  optional uint32 drops = 9;
 
-  optional uint32 tmem = 9;  // INET_DIAG_INFO only.
+  optional uint32 tmem = 99;  // INET_DIAG_MEMINFO only.
 }
 
 // Proto for struct tcp_bbr_info when INET_DIAG_BBRINFO element is non-null.
@@ -199,7 +200,7 @@ message TCPInfoProto {
 
   /* Times. */
   optional uint32  last_data_sent = 18;  // msec ?
-  optional uint32  last_ack_sent =  19;  // msec ?   /* Not remembered, sorry. */
+  optional uint32  last_ack_sent =  19;  // msec ? /* Not remembered, sorry. */
   optional uint32  last_data_recv = 20;  // msec ?
   optional uint32  last_ack_recv =  21;  // msec ?
 
@@ -221,16 +222,16 @@ message TCPInfoProto {
   // In tcp code, these four are 64 bit unsigned.
   optional uint64  pacing_rate =     33;
   optional uint64  max_pacing_rate = 34;
-  optional uint64  bytes_acked =     35; /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
-  optional uint64  bytes_received =  36; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
 
-  optional uint32  segs_out = 37;       /* RFC4898 tcpEStatsPerfSegsOut */
-  optional uint32  segs_in =  38;       /* RFC4898 tcpEStatsPerfSegsIn */
+  optional uint64  bytes_acked =     35;  /* RFC4898 */
+  optional uint64  bytes_received =  36;  /* RFC4898 */
+  optional uint32  segs_out = 37;         /* RFC4898 tcpEStatsPerfSegsOut */
+  optional uint32  segs_in =  38;         /* RFC4898 tcpEStatsPerfSegsIn */
 
   optional uint32  notsent_bytes = 39;
   optional uint32  min_rtt =       40;
-  optional uint32  data_segs_in =  41;     /* RFC4898 tcpEStatsDataSegsIn */
-  optional uint32  data_segs_out = 42;     /* RFC4898 tcpEStatsDataSegsOut */
+  optional uint32  data_segs_in =  41;    /* RFC4898 tcpEStatsDataSegsIn */
+  optional uint32  data_segs_out = 42;    /* RFC4898 tcpEStatsDataSegsOut */
 
   optional uint64  delivery_rate = 43;
 
@@ -254,17 +255,23 @@ message TCPDiagnosticsProto {
 
   // The following three are mutually exclusive, as they provide
   // data from different congestion control strategies.
-  // Data obtained from struct tcpvegas_info.
-  optional TCPVegasInfoProto vegas     = 4;
-  // Data obtained from struct tcp_dctcp_info.
-  optional DCTCPInfoProto dctcp        = 5;
-  // Data obtained from struct tcp_bbr_info.
-  optional BBRInfoProto bbr_info       = 6;
+  oneof cc_info {
+    // Data obtained from struct tcpvegas_info.
+    TCPVegasInfoProto vegas     = 4;
+    // Data obtained from struct tcp_dctcp_info.
+    DCTCPInfoProto dctcp        = 5;
+    // Data obtained from struct tcp_bbr_info.
+    BBRInfoProto bbr_info       = 6;
+  }
 
   // Data obtained from INET_DIAG_SKMEMINFO or INET_DIAG_MEMINFO.
   optional SocketMemInfoProto socket_mem = 7;
 
   // Data obtained from struct tcp_info.
   optional TCPInfoProto tcp_info       = 8;
+
+  // If there is shutdown info, this is the mask value.
+  // Check has_shutdown_mask to determine whether present.
+  optional uint32 shutdown_mask        = 9;
 }
 

@@ -20,6 +20,8 @@ set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 
 ################### iproute submodule ########################
 add_subdirectory(${PROJECT_SOURCE_DIR}/ext/iproute2)
+include_directories(${IPROUTE2_INCLUDE_DIRS})
+link_directories(${IPROUTE2_LIBS_DIR})
 
 ################### protobuf compiler ########################
 find_package(Threads REQUIRED)
@@ -45,9 +47,14 @@ enable_testing()
 
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
     ${SRC_DIR}/tcpinfo.proto)
-add_library(${PROJECT_NAME}
+add_library(tcpinfo_lib
     ${SRC_DIR}/tcpinfo_lib.cc ${SRC_DIR}/tcpinfo_lib.h
     ${PROTO_HDRS} ${PROTO_SRCS})
+add_dependencies(tcpinfo_lib iproute2)
+
+target_link_libraries(tcpinfo_lib
+    ${IPROUTE2_LIBS_DIR}/libnetlink.a
+    ${IPROUTE2_LIBS_DIR}/libutil.a)
 
 ################### unit tests ########################
 set(PROJECT_TEST_NAME ${PROJECT_NAME_STR}_test)
@@ -57,13 +64,15 @@ set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 add_executable(${PROJECT_TEST_NAME}
     ${SRC_DIR}/tcpinfo_proto_test.cc)
 add_dependencies(${PROJECT_TEST_NAME} googletest)
-# add_dependencies(${PROJECT_TEST_NAME} iproute2)
 
 target_link_libraries(${PROJECT_TEST_NAME}
     ${GTEST_LIBS_DIR}/libgtest.a
     ${GTEST_LIBS_DIR}/libgtest_main.a
-    tcpinfo_lib
-    )
+    tcpinfo_lib)
+
+#target_link_libraries(${PROJECT_TEST_NAME}
+ #   ${IPROUTE2_LIBS_DIR}/libnetlink.a
+  #  ${IPROUTE2_LIBS_DIR}/libutil.a)
 
 target_link_libraries(${PROJECT_TEST_NAME} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${PROJECT_TEST_NAME} ${PROTOBUF_LIBRARIES})
