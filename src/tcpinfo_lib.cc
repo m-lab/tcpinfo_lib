@@ -263,23 +263,17 @@ void TCPInfoParser::NLMsgToProto(const struct nlmsghdr* nlh,
       case INET_DIAG_VEGASINFO:
         fprintf(stderr, "Need to do vegas\n");
         break;
+      case INET_DIAG_SKV6ONLY:
+        // TODO(gfr) Do we need this?
+        break;
       default:
-        // TODO - should LOG() a notice of missing cases.
+        // TODO(gfr) - should LOG() a notice of missing cases.
         ;
     }
     rta = RTA_NEXT(rta,len);
   }
   if (len)
     fprintf(stderr, "!!!Deficit %d, rta_len=%d\n", len, rta->rta_len);
-
-#if 0
-  if (s.local.family == AF_INET6 && tb[INET_DIAG_SKV6ONLY]) {
-    unsigned char v6only;
-
-    v6only = *(__u8 *)RTA_DATA(tb[INET_DIAG_SKV6ONLY]);
-//    printf(" v6only:%u", v6only);
-  }
-#endif
 }
 
 bool ConnectionFilter::Accept(
