@@ -70,10 +70,6 @@ target_link_libraries(${PROJECT_TEST_NAME}
     ${GTEST_LIBS_DIR}/libgtest_main.a
     tcpinfo_lib)
 
-#target_link_libraries(${PROJECT_TEST_NAME}
- #   ${IPROUTE2_LIBS_DIR}/libnetlink.a
-  #  ${IPROUTE2_LIBS_DIR}/libutil.a)
-
 target_link_libraries(${PROJECT_TEST_NAME} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${PROJECT_TEST_NAME} ${PROTOBUF_LIBRARIES})
 add_test(test1 ${PROJECT_TEST_NAME})  # Add project test to ctest targets.
