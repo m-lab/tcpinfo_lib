@@ -24,10 +24,16 @@
 namespace mlab {
 namespace netlink {
 namespace {
+// Extract a single 16 bit ipv6 field from byte array.
+// <ip> byte array
+// <n> offset
 unsigned int extract(const std::string& ip, int n) {
   return (((unsigned char)(ip[n])) << 8) + (unsigned char)ip[n+1];
 }
 
+// Parse primary inet_diag_msg into protobuf.
+// <r> Non-null pointer to message.
+// <proto> Non-null pointer to protobuf.
 void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
   auto family = r->idiag_family;
   if (!InetDiagMsgProto_AddressFamily_IsValid(family)) {
@@ -69,6 +75,9 @@ void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
   proto->set_inode(r->idiag_inode);
 }
 
+// Parse rtattr message containing BBR info.
+// <rta> Non-null pointer to message.
+// <proto> Non-null pointer to protobuf.
 void ParseBBRInfo(const struct rtattr* rta, BBRInfoProto* proto) {
   const auto* bbr = (const struct tcp_bbr_info*) rta;
   auto bw = (((unsigned long long)bbr->bbr_bw_hi) << 32) + bbr->bbr_bw_lo;
@@ -80,31 +89,34 @@ void ParseBBRInfo(const struct rtattr* rta, BBRInfoProto* proto) {
 
 #define TCPI_HAS_OPT(info, opt) !!(info->tcpi_options & (opt))
 
-void ParseTCPInfo(const struct rtattr* tb, TCPInfoProto* proto) {
+// Parse rtattr message containing TCP info.
+// <rta> Non-null pointer to message.
+// <proto> Non-null pointer to protobuf.
+void ParseTCPInfo(const struct rtattr* rta, TCPInfoProto* proto) {
   const struct tcp_info* info;
-  int len = RTA_PAYLOAD(tb);
+  int len = RTA_PAYLOAD(rta);
 
   /* workaround for older kernels with fewer fields */
   if (len < sizeof(*info)) {
     info = (const struct tcp_info*)alloca(sizeof(*info));
-    memcpy((char *)info, (char*)RTA_DATA(tb), len);
+    memcpy((char *)info, (char*)RTA_DATA(rta), len);
     memset((char *)info + len, 0, sizeof(*info) - len);
   } else {
-    info = (const struct tcp_info*)RTA_DATA(tb);
+    info = (const struct tcp_info*)RTA_DATA(rta);
   }
 
-#define SET_NONZERO(field) \
+#define SET_TCP_IF_NONZERO(field) \
   if (info->tcpi_##field) \
     proto->set_##field(info->tcpi_##field)
-#define SET_ALWAYS(field) \
+#define SET_TCP_FIELD(field) \
     proto->set_##field(info->tcpi_##field)
 
   proto->set_state(TCPState(info->tcpi_state));  // error checking?
-  SET_ALWAYS(ca_state);
-  SET_NONZERO(retransmits);
-  SET_NONZERO(probes);
-  SET_NONZERO(backoff);
-  SET_ALWAYS(options);
+  SET_TCP_FIELD(ca_state);
+  SET_TCP_IF_NONZERO(retransmits);
+  SET_TCP_IF_NONZERO(probes);
+  SET_TCP_IF_NONZERO(backoff);
+  SET_TCP_FIELD(options);
   // congestion?
   if (TCPI_HAS_OPT(info, TCPI_OPT_WSCALE)) {
     proto->set_snd_wscale(info->tcpi_snd_wscale);
@@ -114,88 +126,95 @@ void ParseTCPInfo(const struct rtattr* tb, TCPInfoProto* proto) {
   //
   if (info->tcpi_rto && info->tcpi_rto != 3000000)
     proto->set_rto(info->tcpi_rto);
-  SET_NONZERO(ato);
-  SET_NONZERO(ato);
-  SET_NONZERO(snd_mss);
-  SET_NONZERO(rcv_mss);
+  SET_TCP_IF_NONZERO(ato);
+  SET_TCP_IF_NONZERO(ato);
+  SET_TCP_IF_NONZERO(snd_mss);
+  SET_TCP_IF_NONZERO(rcv_mss);
 
-  SET_NONZERO(unacked);
-  SET_NONZERO(sacked);
-  SET_NONZERO(lost);
-  SET_NONZERO(retrans);
-  SET_NONZERO(fackets);  // ???
+  SET_TCP_IF_NONZERO(unacked);
+  SET_TCP_IF_NONZERO(sacked);
+  SET_TCP_IF_NONZERO(lost);
+  SET_TCP_IF_NONZERO(retrans);
+  SET_TCP_IF_NONZERO(fackets);  // ???
 
-  SET_ALWAYS(last_data_sent);
-  SET_ALWAYS(last_ack_sent);
-  SET_ALWAYS(last_data_recv);
-  SET_ALWAYS(last_ack_recv);
+  SET_TCP_FIELD(last_data_sent);
+  SET_TCP_FIELD(last_ack_sent);
+  SET_TCP_FIELD(last_data_recv);
+  SET_TCP_FIELD(last_ack_recv);
 
-  SET_NONZERO(pmtu);
+  SET_TCP_IF_NONZERO(pmtu);
   if (info->tcpi_rcv_ssthresh < 0xFFFF)
     proto->set_rcv_ssthresh(info->tcpi_rcv_ssthresh);
-  SET_NONZERO(rtt);
-  SET_NONZERO(rttvar);
-  SET_NONZERO(snd_ssthresh);
-  SET_NONZERO(snd_cwnd);
-  SET_NONZERO(advmss);
-  SET_NONZERO(reordering);
+  SET_TCP_IF_NONZERO(rtt);
+  SET_TCP_IF_NONZERO(rttvar);
+  SET_TCP_IF_NONZERO(snd_ssthresh);
+  SET_TCP_IF_NONZERO(snd_cwnd);
+  SET_TCP_IF_NONZERO(advmss);
+  SET_TCP_IF_NONZERO(reordering);
 
-  SET_NONZERO(rcv_rtt);
-  SET_NONZERO(rcv_space);
-  SET_NONZERO(total_retrans);
+  SET_TCP_IF_NONZERO(rcv_rtt);
+  SET_TCP_IF_NONZERO(rcv_space);
+  SET_TCP_IF_NONZERO(total_retrans);
 
-  SET_NONZERO(pacing_rate);
-  SET_NONZERO(max_pacing_rate);
-  SET_NONZERO(bytes_acked);
-  SET_NONZERO(bytes_received);
+  SET_TCP_IF_NONZERO(pacing_rate);
+  SET_TCP_IF_NONZERO(max_pacing_rate);
+  SET_TCP_IF_NONZERO(bytes_acked);
+  SET_TCP_IF_NONZERO(bytes_received);
 
-  SET_NONZERO(segs_out);
-  SET_NONZERO(segs_in);
+  SET_TCP_IF_NONZERO(segs_out);
+  SET_TCP_IF_NONZERO(segs_in);
 
-  SET_NONZERO(notsent_bytes);
-  SET_NONZERO(min_rtt);
-  SET_NONZERO(data_segs_in);
-  SET_NONZERO(data_segs_out);
+  SET_TCP_IF_NONZERO(notsent_bytes);
+  SET_TCP_IF_NONZERO(min_rtt);
+  SET_TCP_IF_NONZERO(data_segs_in);
+  SET_TCP_IF_NONZERO(data_segs_out);
 
-  SET_NONZERO(delivery_rate);
-#undef SET_NONZERO
-#undef SET_ALWAYS
+  SET_TCP_IF_NONZERO(delivery_rate);
+#undef SET_TCP_IF_NONZERO
+#undef SET_TCP_FIELD
 }
 
-void ParseMemInfo(const struct rtattr* tb,
+// Parse rtattr message containing mem info.
+// <rta> Non-null pointer to message.
+// <proto> Non-null pointer to protobuf.
+void ParseMemInfo(const struct rtattr* rta,
                   SocketMemInfoProto* proto) {
-  const auto* info = (const struct inet_diag_meminfo*)RTA_DATA(tb);
+  const auto* info = (const struct inet_diag_meminfo*)RTA_DATA(rta);
   proto->set_rmem_alloc(info->idiag_rmem);
   proto->set_wmem_alloc(info->idiag_wmem);
   proto->set_fwd_alloc(info->idiag_fmem);
   proto->set_tmem(info->idiag_tmem);
 }
 
-void ParseSKMemInfo(const struct rtattr* tb,
+// Parse rtattr message containing SK mem info.
+// <rta> Non-null pointer to message.
+// <proto> Non-null pointer to protobuf.
+void ParseSKMemInfo(const struct rtattr* rta,
                   SocketMemInfoProto* proto) {
-  const __u32* info = (__u32*)RTA_DATA(tb);
-#define SET_NONZERO(tag, field) \
+  const __u32* info = (__u32*)RTA_DATA(rta);
+#define SET_MEM_FIELD_IF_NONZERO(tag, field) \
   if (info[SK_MEMINFO_##tag] > 0) \
     proto->set_##field(info[SK_MEMINFO_##tag])
-  SET_NONZERO(RMEM_ALLOC, rmem_alloc);
-  SET_NONZERO(RCVBUF, rcvbuf);
-  SET_NONZERO(WMEM_ALLOC, wmem_alloc);
-  SET_NONZERO(SNDBUF, sndbuf);
-  SET_NONZERO(FWD_ALLOC, fwd_alloc);
-  SET_NONZERO(WMEM_QUEUED, wmem_queued);
-  SET_NONZERO(OPTMEM, optmem);
+  SET_MEM_FIELD_IF_NONZERO(RMEM_ALLOC, rmem_alloc);
+  SET_MEM_FIELD_IF_NONZERO(RCVBUF, rcvbuf);
+  SET_MEM_FIELD_IF_NONZERO(WMEM_ALLOC, wmem_alloc);
+  SET_MEM_FIELD_IF_NONZERO(SNDBUF, sndbuf);
+  SET_MEM_FIELD_IF_NONZERO(FWD_ALLOC, fwd_alloc);
+  SET_MEM_FIELD_IF_NONZERO(WMEM_QUEUED, wmem_queued);
+  SET_MEM_FIELD_IF_NONZERO(OPTMEM, optmem);
 
-  if (RTA_PAYLOAD(tb) < (SK_MEMINFO_BACKLOG + 1) * sizeof(__u32))
+  if (RTA_PAYLOAD(rta) < (SK_MEMINFO_BACKLOG + 1) * sizeof(__u32))
     return;
-  SET_NONZERO(BACKLOG, backlog);
+  SET_MEM_FIELD_IF_NONZERO(BACKLOG, backlog);
 
-  if (RTA_PAYLOAD(tb) < (SK_MEMINFO_DROPS + 1) * sizeof(__u32))
+  if (RTA_PAYLOAD(rta) < (SK_MEMINFO_DROPS + 1) * sizeof(__u32))
     return;
-  SET_NONZERO(DROPS, drops);
-#undef SET_NONZERO
+  SET_MEM_FIELD_IF_NONZERO(DROPS, drops);
+#undef SET_MEM_FIELD_IF_NONZERO
 }
 }  // anonymous namespace
 
+// Create a string representation of an IP endpoint.
 std::string ToString(const EndPoint& ep) {
   char result[64];
   const auto& ip = ep.ip();
@@ -210,6 +229,7 @@ std::string ToString(const EndPoint& ep) {
         extract(ip, 8), extract(ip, 10), extract(ip, 12), extract(ip, 14),
             ep.port());
   } else {
+    // Should never happen.
     // TODO - should log an error.
     return "Unrecognized address size.";
   }
@@ -238,6 +258,8 @@ void TCPInfoParser::NLMsgToProto(const struct nlmsghdr* nlh,
   while (RTA_OK(rta, len)) {
     switch (rta->rta_type) {
       case INET_DIAG_PROTOCOL:
+        fprintf(stderr, "####### Protocol message\n");  // DO NOT SUBMIT
+        // TODO(gfr) Consider checking for equality, and LOG_FIRST_N.
         proto->set_diag_protocol(Protocol(*(__u8 *)RTA_DATA(rta)));
         break;
       case INET_DIAG_INFO:
@@ -267,7 +289,7 @@ void TCPInfoParser::NLMsgToProto(const struct nlmsghdr* nlh,
         // TODO(gfr) Do we need this?
         break;
       default:
-        // TODO(gfr) - should LOG() a notice of missing cases.
+        // TODO(gfr) - should LOG(WARNING) on missing cases.
         ;
     }
     rta = RTA_NEXT(rta,len);
