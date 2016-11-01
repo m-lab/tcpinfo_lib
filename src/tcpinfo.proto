@@ -61,44 +61,44 @@ message InetSocketIDProto {
 // https://datatracker.ietf.org/doc/draft-ietf-tcpm-rfc793bis/
 enum TCPState {  //  from tcp_states.h
   ESTABLISHED = 1;
-  SYN_SENT    = 2;
-  SYN_RECV    = 3;
-  FIN_WAIT1   = 4;
-  FIN_WAIT2   = 5;
-  TIME_WAIT   = 6;
-  CLOSE       = 7;
-  CLOSE_WAIT  = 8;
-  LAST_ACK    = 9;
-  LISTEN      = 10;
-  CLOSING     = 11;    /* Now a valid state */
+  SYN_SENT = 2;
+  SYN_RECV = 3;
+  FIN_WAIT1 = 4;
+  FIN_WAIT2 = 5;
+  TIME_WAIT = 6;
+  CLOSE = 7;
+  CLOSE_WAIT = 8;
+  LAST_ACK = 9;
+  LISTEN = 10;
+  CLOSING = 11; /* Now a valid state */
 }
 
-message  InetDiagMsgProto {
+message InetDiagMsgProto {
   enum AddressFamily {
     AF_UNSPEC = 0;
     AF_INET = 2;
     AF_INET6 = 10;
   }
   // These are 8 bit unsigned.
-  optional AddressFamily family  = 1;
+  optional AddressFamily family = 1;
   optional TCPState state = 2;  // TODO - is this the correct enum?
 
-  optional uint32 timer    = 3;
-  optional uint32 retrans  = 4;
+  optional uint32 timer = 3;
+  optional uint32 retrans = 4;
 
   optional InetSocketIDProto sock_id = 5;
-  optional uint32 expires =  6;
-  optional uint32 rqueue  =  7;
-  optional uint32 wqueue  =  8;
-  optional uint32 uid     =  9;
-  optional uint32 inode   = 10;
+  optional uint32 expires = 6;
+  optional uint32 rqueue = 7;
+  optional uint32 wqueue = 8;
+  optional uint32 uid = 9;
+  optional uint32 inode = 10;
 }
 
 // Proto representation for struct tcpvegas_info.
 message TCPVegasInfoProto {
   // Note that tcpv_enabled is represented by the has_xxx in the parent.
   optional uint32 rttcnt = 1;
-  optional uint32 rtt    = 2;
+  optional uint32 rtt = 2;
   optional uint32 minrtt = 3;
 }
 
@@ -106,9 +106,9 @@ message TCPVegasInfoProto {
 message DCTCPInfoProto {
   // Note that dctcp_enabled is represented by the has_xxx in the parent.
   optional uint32 ce_state = 1;
-  optional uint32 alpha    = 2;
-  optional uint32 ab_ecn   = 3;
-  optional uint32 ab_tot   = 4;
+  optional uint32 alpha = 2;
+  optional uint32 ab_ecn = 3;
+  optional uint32 ab_tot = 4;
 }
 
 // Proto representation for struct tcp_dctcp_info or struct tcpvegas_info.
@@ -120,7 +120,7 @@ message SocketMemInfoProto {
   optional uint32 rcvbuf = 2;
   optional uint32 wmem_alloc = 3;  // idiag_wmem for INET_DIAG_MEMINFO
   optional uint32 sndbuf = 4;
-  optional uint32 fwd_alloc = 5;   // idiag_fmem for INET_DIAG_MEMINFO
+  optional uint32 fwd_alloc = 5;  // idiag_fmem for INET_DIAG_MEMINFO
   optional uint32 wmem_queued = 6;
   optional uint32 optmem = 7;
   optional uint32 backlog = 8;
@@ -131,10 +131,10 @@ message SocketMemInfoProto {
 
 // Proto for struct tcp_bbr_info when INET_DIAG_BBRINFO element is non-null.
 message BBRInfoProto {
-  optional uint64 bw      = 1;  // Combines bbr_bw_lo and bbr_bw_hi
-  optional uint32 min_rtt = 2;  // min-filtered RTT in uSec
+  optional uint64 bw = 1;           // Combines bbr_bw_lo and bbr_bw_hi
+  optional uint32 min_rtt = 2;      // min-filtered RTT in uSec
   optional uint32 pacing_gain = 3;  // pacing gain shifted left 8 bits
-  optional uint32 cwnd_gain = 4;  // cwnd gain shifted left 8 bits.
+  optional uint32 cwnd_gain = 4;    // cwnd gain shifted left 8 bits.
 }
 
 // This proto is intended to precisely represent the raw data from tcpinfo.
@@ -142,7 +142,8 @@ message BBRInfoProto {
 message TCPInfoProto {
   // state through rcv_wscale are 7 x _u8
   // TODO - should this actually be here?
-  optional TCPState state = 1;  // TCP FSM state, e.g. ESTABLISHED, FIN_WAIT_1, CLOSING
+  optional TCPState state =
+      1;  // TCP FSM state, e.g. ESTABLISHED, FIN_WAIT_1, CLOSING
 
   enum CAState {
     TCPF_CA_Open = 1;
@@ -155,86 +156,85 @@ message TCPInfoProto {
   optional uint32 ca_state = 2;  // Maybe make this bools?
 
   optional uint32 retransmits = 3;
-  optional uint32 probes =      4;
-  optional uint32 backoff =     5;
+  optional uint32 probes = 4;
+  optional uint32 backoff = 5;
 
-// #define TCPI_HAS_OPT(info, opt) !!(info->tcpi_options & (opt))
+  // #define TCPI_HAS_OPT(info, opt) !!(info->tcpi_options & (opt))
   enum Options {
     OPT_TIMESTAMPS = 1;
-    OPT_SACK =       2;
-    OPT_WSCALE =     4;
-    OPT_ECN =        8;
-    OPT_ECN_SEEN =  16;
-    OPT_SYN_DATA =  32;
+    OPT_SACK = 2;
+    OPT_WSCALE = 4;
+    OPT_ECN = 8;
+    OPT_ECN_SEEN = 16;
+    OPT_SYN_DATA = 32;
   }
 
-  optional uint32  options = 6;
+  optional uint32 options = 6;
 
   // Here are the 6 OPTs broken out as bools.
   optional bool ts_opt = 601;
   optional bool sack_opt = 602;
   // wscale_opt determines whether snd_wscale and rcv_wscale are populated.
   // So this is actually redundant with has_snd_wscale and has_rcv_wscale.
-  optional bool wscale_opt =  603;
+  optional bool wscale_opt = 603;
   optional bool ecn_opt = 604;
   optional bool ecnseen_opt = 605;
   optional bool fastopen_opt = 606;
 
-  optional uint32  snd_wscale = 7;
-  optional uint32  rcv_wscale = 8;
+  optional uint32 snd_wscale = 7;
+  optional uint32 rcv_wscale = 8;
 
   // This field was recently added as an eighth u8 immediately following
   // tcpi_xxx_wscale bit fields, so inserting it here.
   optional bool delivery_rate_app_limited = 801;
 
-  optional uint32  rto =      9;
-  optional uint32  ato =     10;
-  optional uint32  snd_mss = 11;
-  optional uint32  rcv_mss = 12;
+  optional uint32 rto = 9;
+  optional uint32 ato = 10;
+  optional uint32 snd_mss = 11;
+  optional uint32 rcv_mss = 12;
 
-  optional uint32  unacked = 13;
-  optional uint32  sacked =  14;
-  optional uint32  lost =    15;
-  optional uint32  retrans = 16;
-  optional uint32  fackets = 17;
+  optional uint32 unacked = 13;
+  optional uint32 sacked = 14;
+  optional uint32 lost = 15;
+  optional uint32 retrans = 16;
+  optional uint32 fackets = 17;
 
   /* Times. */
-  optional uint32  last_data_sent = 18;  // msec ?
-  optional uint32  last_ack_sent =  19;  // msec ? /* Not remembered, sorry. */
-  optional uint32  last_data_recv = 20;  // msec ?
-  optional uint32  last_ack_recv =  21;  // msec ?
+  optional uint32 last_data_sent = 18;  // msec ?
+  optional uint32 last_ack_sent = 19;   // msec ? /* Not remembered, sorry. */
+  optional uint32 last_data_recv = 20;  // msec ?
+  optional uint32 last_ack_recv = 21;   // msec ?
 
   /* Metrics. */
-  optional uint32  pmtu =         22;
-  optional uint32  rcv_ssthresh = 23;
-  optional uint32  rtt =          24;  // msec
-  optional uint32  rttvar =       25;
-  optional uint32  snd_ssthresh = 26;
-  optional uint32  snd_cwnd =     27;
-  optional uint32  advmss =       28;
-  optional uint32  reordering =   29;
+  optional uint32 pmtu = 22;
+  optional uint32 rcv_ssthresh = 23;
+  optional uint32 rtt = 24;  // msec
+  optional uint32 rttvar = 25;
+  optional uint32 snd_ssthresh = 26;
+  optional uint32 snd_cwnd = 27;
+  optional uint32 advmss = 28;
+  optional uint32 reordering = 29;
 
-  optional uint32  rcv_rtt =   30;
-  optional uint32  rcv_space = 31;
+  optional uint32 rcv_rtt = 30;
+  optional uint32 rcv_space = 31;
 
-  optional uint32  total_retrans = 32;
+  optional uint32 total_retrans = 32;
 
   // In tcp code, these four are 64 bit unsigned.
-  optional uint64  pacing_rate =     33;
-  optional uint64  max_pacing_rate = 34;
+  optional uint64 pacing_rate = 33;
+  optional uint64 max_pacing_rate = 34;
 
-  optional uint64  bytes_acked =     35;  /* RFC4898 */
-  optional uint64  bytes_received =  36;  /* RFC4898 */
-  optional uint32  segs_out = 37;         /* RFC4898 tcpEStatsPerfSegsOut */
-  optional uint32  segs_in =  38;         /* RFC4898 tcpEStatsPerfSegsIn */
+  optional uint64 bytes_acked = 35;    /* RFC4898 */
+  optional uint64 bytes_received = 36; /* RFC4898 */
+  optional uint32 segs_out = 37;       /* RFC4898 tcpEStatsPerfSegsOut */
+  optional uint32 segs_in = 38;        /* RFC4898 tcpEStatsPerfSegsIn */
 
-  optional uint32  notsent_bytes = 39;
-  optional uint32  min_rtt =       40;
-  optional uint32  data_segs_in =  41;    /* RFC4898 tcpEStatsDataSegsIn */
-  optional uint32  data_segs_out = 42;    /* RFC4898 tcpEStatsDataSegsOut */
+  optional uint32 notsent_bytes = 39;
+  optional uint32 min_rtt = 40;
+  optional uint32 data_segs_in = 41;  /* RFC4898 tcpEStatsDataSegsIn */
+  optional uint32 data_segs_out = 42; /* RFC4898 tcpEStatsDataSegsOut */
 
-  optional uint64  delivery_rate = 43;
-
+  optional uint64 delivery_rate = 43;
 }
 
 enum Protocol {
@@ -249,7 +249,7 @@ message TCPDiagnosticsProto {
   optional InetDiagMsgProto inet_diag_msg = 1;
 
   // From INET_DIAG_PROTOCOL message.
-  optional Protocol diag_protocol        = 2;
+  optional Protocol diag_protocol = 2;
   // From INET_DIAG_CONG message.
   optional string congestion_algorithm = 3;
 
@@ -257,21 +257,20 @@ message TCPDiagnosticsProto {
   // data from different congestion control strategies.
   oneof cc_info {
     // Data obtained from struct tcpvegas_info.
-    TCPVegasInfoProto vegas     = 4;
+    TCPVegasInfoProto vegas = 4;
     // Data obtained from struct tcp_dctcp_info.
-    DCTCPInfoProto dctcp        = 5;
+    DCTCPInfoProto dctcp = 5;
     // Data obtained from struct tcp_bbr_info.
-    BBRInfoProto bbr_info       = 6;
+    BBRInfoProto bbr_info = 6;
   }
 
   // Data obtained from INET_DIAG_SKMEMINFO or INET_DIAG_MEMINFO.
   optional SocketMemInfoProto socket_mem = 7;
 
   // Data obtained from struct tcp_info.
-  optional TCPInfoProto tcp_info       = 8;
+  optional TCPInfoProto tcp_info = 8;
 
   // If there is shutdown info, this is the mask value.
   // Check has_shutdown_mask to determine whether present.
-  optional uint32 shutdown_mask        = 9;
+  optional uint32 shutdown_mask = 9;
 }
-

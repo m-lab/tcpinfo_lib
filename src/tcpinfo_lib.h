@@ -25,8 +25,8 @@
 
 #include "tcpinfo.pb.h"
 
-#include <functional>
 #include <linux/netlink.h>
+#include <functional>
 
 namespace mlab {
 namespace netlink {
@@ -62,7 +62,7 @@ class TCPInfoParser {
 class ConnectionFilter {
  public:
   // Token to be used for removing filters.
-  struct Token{};
+  struct Token {};
 
   bool Accept(const mlab::netlink::InetSocketIDProto& socket) const;
   bool Accept(const struct nlmsghdr* msg) const;
@@ -83,7 +83,7 @@ class ConnectionFilter {
 
 class TCPInfoPoller {
  public:
-  using Handler = std::function<void (const struct nlmsghdr* msg)>;
+  using Handler = std::function<void(const struct nlmsghdr* msg)>;
 
   // Request netlink data once, run any triggered behaviors, and update the
   // data cache.
@@ -109,8 +109,8 @@ class TCPInfoPoller {
   // For example, if we want to collect all polled data on a specific tuple
   // for NDT, we could specify the filter for that tuple, and an on_change
   // handler that reports the desired NDT data.
-  ConnectionFilter::Token AddFilter(ConnectionFilter filter,
-                                 Handler on_close, Handler on_change);
+  ConnectionFilter::Token AddFilter(ConnectionFilter filter, Handler on_close,
+                                    Handler on_change);
 
   // This adds a filter that allows some connections to be reported by the
   // default OnClose or OnChange handler.  Reporting will trigger for any
@@ -122,10 +122,9 @@ class TCPInfoPoller {
   // the tuple filters.
   void OnClose(Handler handler);
   void OnChange(Handler handler);
-
 };
 
-} // namespace netlink
-} // namespace mlab
+}  // namespace netlink
+}  // namespace mlab
 
 #endif  // MLAB_TCPINFO_LIB_H_
