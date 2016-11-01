@@ -258,7 +258,7 @@ void TCPInfoParser::NLMsgToProto(const struct nlmsghdr* nlh,
   while (RTA_OK(rta, len)) {
     switch (rta->rta_type) {
       case INET_DIAG_PROTOCOL:
-        fprintf(stderr, "####### Protocol message\n");  // DO NOT SUBMIT
+        // Used only for multicast messages. Not expected for our use cases.
         // TODO(gfr) Consider checking for equality, and LOG_FIRST_N.
         proto->set_diag_protocol(Protocol(*(__u8 *)RTA_DATA(rta)));
         break;
