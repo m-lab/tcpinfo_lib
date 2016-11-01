@@ -39,6 +39,8 @@ namespace netlink {
 //  3. Create snapshot of all ESTABLISHED connections, and return as
 //     vector<mlab.netlink.TCPDiagnosticsProto>.
 
+std::string ToString(const EndPoint& ep);
+
 // TCPInfoParser parses a single nlmsg struct, and produces an
 // mlab.netlink.TCPDiagnosticsProto.  It is a class, so that we may later extend
 // it to support filtering and other configured behavior.
