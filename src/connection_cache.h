@@ -11,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// This defines a cache to collect arbitrary data associated with tcp
+// connections.  It is intended to be used to cache tcpinfo and related data,
+// allow it to be updated (swapping the new for old data for a connection),
+// and iterate with a visitor over any stale connections.
 
 #include <unordered_map>
 
