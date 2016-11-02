@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# To make git run unit tests, softlink this file into the
+# .git/hooks directory.  The following command will get that done:
+#   ln -s ../../pre-commit .git/hooks/pre-commit
+
+# Run unit tests
+cd build
+if ! cmake .. > /dev/null; then
+  echo "Cmake config failed. " $?
+  exit 1
+fi
+
+if ! cmake --build . > /dev/null; then
+  echo "Cmake build failed."
+  exit 1
+fi
+
+if ! ctest -VV > /dev/null; then
+  echo "Cmake build failed."
+  exit 1
+fi
+
