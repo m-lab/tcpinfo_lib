@@ -9,12 +9,12 @@ matrix:
         apt:
           sources:
           - ubuntu-toolchain-r-test
-          - llvm-toolchain-precise-3.6
+          - llvm-toolchain-trusty-3.9
           packages:
           - gcc-4.9
           - g++-4.9
           - lcov
-      env: CXX_COMPILER=g++ C_COMPILER=gcc
+      env: CXX_COMPILER=g++ C_COMPILER=gcc ENABLE_COVERAGE=true
 
 before_install:
 - sudo apt-get update -qq
@@ -22,10 +22,12 @@ before_install:
 
 install:
 # install GTest and GMock
+# TODO(gfr) See if there is a faster way to install these...
 - sudo apt-get -qq install libgtest-dev
 - "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
 - sudo apt-get -qq install google-mock
 - "cd /usr/src/gmock && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
+# Install coverage tools.
 - cd ${TRAVIS_BUILD_DIR}
 - sudo apt-get -qq install lcov
 - lcov --version
@@ -36,21 +38,26 @@ before_cache:
 - mkdir build
 
 cache:
+# This controls the caching of third party stuff.  Saves about 8 minutes.
   directories:
   - build/ext/iproute2
   - protobuf
 
 before_script:
+# Check if protobuf compiler is present, and load if it is not.
 - sudo ./install-protobuf.sh
 
 script:
+# Build and run tests.
 - cd build
 - cmake -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER .. && cmake --build .
 - ctest -V
 
 after_success:
+# Collect coverage data.
 - cd ${TRAVIS_BUILD_DIR}
 - lcov --directory build/ --capture -o coverage.info
 - lcov -r coverage.info '*_test.cc' '*.pb.h' '*.pb.cc' '*/iproute2/*' '/usr/include/*' '*/gtest/*' -o coverage.info
 - lcov --list coverage.info
+# Upload the coverage info to coveralls.
 - coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info

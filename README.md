@@ -3,16 +3,24 @@ Wrapper library for collecting data through netlink.
 
 NDT and Sidestream both will require functionality related to but not entirely provided by the netlink library.  This repository will hold primarily OO code that encapsulates calls to netlink library functions, and basic manipulation of the resulting instrumentation data, including protobuf generation.
 
-# Dependency on iproute2
-Two CMake files are provided that include rules to download and build the
-net-next branch of the iproute2 tools.  You will need cmake installed, and after cloning the repository, do:
+# Building
 ```
-  mkdir build
-  cd build
-  cmake ..
-  make
+git clone git@github.com:gfr10598/tcpinfo_lib
+cd tcpinfo_lib
+mkdir build
+cd build
+cmake .. && cmake --build . && ctest -V
 ```
-When make finishes, there should be an iproute2 directory, and make should have successfully build all targets under iproute2.
+
+# Dependencies
+There are several dependencies that are handled through add_directory(...).  The
+CMake files for these are under ext/, and they are invoked as needed.
+
+The install_protobuf.sh script is used for building and installing google protobuf as needed.
+
+# Travis-CI integration
+.travis.yml provides config for building within travis-ci.  Currently only gcc
+config is working, but will hopefully add clang config later.
 
 # Source tree
 ```
@@ -20,8 +28,7 @@ When make finishes, there should be an iproute2 directory, and make should have 
 ├── CMakeLists.txt
 ├── ext
 │   ├── gtest
-│   ├── iproute2
-│   └── protobuf
+│   └── iproute2
 ├── install-protobuf.sh
 ├── LICENSE
 ├── README.md
