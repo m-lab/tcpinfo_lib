@@ -16,15 +16,12 @@ When make finishes, there should be an iproute2 directory, and make should have 
 
 # Source tree
 ```
-├── build
+├── .travis.yml
 ├── CMakeLists.txt
 ├── ext
 │   ├── gtest
-│   │   └── CMakeLists.txt
 │   ├── iproute2
-│   │   └── CMakeLists.txt
 │   └── protobuf
-│       └── CMakeLists.txt
 ├── install-protobuf.sh
 ├── LICENSE
 ├── README.md
