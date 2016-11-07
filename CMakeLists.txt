@@ -1,12 +1,19 @@
 cmake_minimum_required (VERSION 2.8.6)
 
 # Note that these must precede the ENABLE_LANGUAGE statements.
-set(CMAKE_C_COMPILER "/usr/bin/clang")
-set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+if (NOT DEFINED TRAVIS)
+MESSAGE(STATUS "Not travis - using clang")
+#set(CMAKE_C_COMPILER "/usr/bin/clang")
+#set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+endif()
+
 ENABLE_LANGUAGE(C)
 ENABLE_LANGUAGE(CXX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+# THIS SHOULD BE CONDITIONAL
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0") # debug, no optimisation
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage") # enabling coverage
 
 # This allows the external project to push and pop environment.
 cmake_policy(SET CMP0011 OLD)
