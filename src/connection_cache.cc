@@ -58,7 +58,6 @@ void ConnectionTracker::VisitMissingRecords(
   for (auto it = connections_.begin(); it != connections_.end();) {
     if (it->second.round != round_) {
       visitor(it->second);
-      //      OutputItem(it->second);
       it = connections_.erase(it);
     } else {
       ++it;
@@ -67,8 +66,17 @@ void ConnectionTracker::VisitMissingRecords(
 }
 
 namespace {
+// We want simple hash function for connection map, and there isn't a
+// good one in standard libraries.  This one is derived from boost.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+//
+// This will be used for small numbers of connection (< 1000), and
+// consequences of a collision are modest.  Since the raw data also
+// contains the full connection info, we can detect collisions later
+// if we care.
 inline void hash_combine(std::size_t& seed) {}
-
 template <typename T, typename... Rest>
 inline void hash_combine(std::size_t& seed, const T& v, Rest... rest) {
   std::hash<T> hasher;
@@ -77,16 +85,16 @@ inline void hash_combine(std::size_t& seed, const T& v, Rest... rest) {
 }
 
 // Returns zero if endpoints are on same IP address.
-size_t Hash(const struct inet_diag_sockid id, int family) {
+size_t HashConnection(const struct inet_diag_sockid id, int family) {
   size_t key = id.idiag_sport;
   hash_combine(key, id.idiag_dport);
   // We don't need to track sockets where the remote endpoint is localhost.
   bool endpoints_are_same = true;
   // TODO - are there other possible lengths we need to worry about?
-  int words = (family == AF_INET) ? 1 : 4;
-  for (int word = 0; word < words; ++word) {
+  int num_words = (family == AF_INET) ? 1 : 4;
+  for (int word = 0; word < num_words; ++word) {
     endpoints_are_same &= (id.idiag_src[word] == id.idiag_dst[word]);
-    hash_combine(key, id.idiag_dport, id.idiag_src[word], id.idiag_dst[word]);
+    hash_combine(key, id.idiag_src[word], id.idiag_dst[word]);
   }
   return endpoints_are_same ? 0 : key;
 }
@@ -95,7 +103,7 @@ size_t Hash(const struct inet_diag_sockid id, int family) {
 bool ConnectionTracker::UpdateFromNLMsg(int family, int protocol,
                                         const struct inet_diag_sockid id,
                                         const struct nlmsghdr* nlh) {
-  size_t key = Hash(id, family);
+  size_t key = HashConnection(id, family);
   if (key == 0) return false;
   std::string data(reinterpret_cast<const char*>(nlh), nlh->nlmsg_len);
   return UpdateRecord(key, protocol, &data);

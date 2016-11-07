@@ -25,7 +25,7 @@ extern "C" {
 namespace mlab {
 // Simple visitor that just counts the visited records.
 int visit_count = 0;
-void visitor(const Record& record) { visit_count++; }
+void visitor(const ConnectionTracker::Record& record) { visit_count++; }
 
 TEST(ConnectionTracker, Basic) {
   ConnectionTracker cache;
