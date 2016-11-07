@@ -30,6 +30,7 @@ install:
 # Install coverage tools.
 - cd ${TRAVIS_BUILD_DIR}
 - sudo apt-get -qq install lcov
+- gem install coveralls-lcov
 - lcov --version
 - g++ --version
 
