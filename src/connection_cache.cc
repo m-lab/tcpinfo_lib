@@ -14,17 +14,16 @@
 
 #include "connection_cache.h"
 
-#include "tcpinfo_lib.h"
-//#include "tcpinfo_util.h"
 
 #include <fstream>
 #include <string>
+#include <unistd.h>
+#include <unordered_map>
+
 extern "C" {
 #include <linux/inet_diag.h>
 #include <sys/socket.h>
 }
-#include <unistd.h>
-#include <unordered_map>
 
 namespace mlab {
 

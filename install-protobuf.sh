@@ -6,10 +6,16 @@ set -x
 # check to see if protobuf tools already exist.
 LIBS=`/usr/bin/pkg-config --libs protobuf`
 if [ $? -ne 0 ] ; then
-  echo "Install protobuf from web."
-  git clone git@github.com:google/protobuf.git
-  cd protobuf && git checkout v3.1.0
-  ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && sudo ldconfig
+  if [ -r protobuf/configure ] ; then
+    echo "Using cached protobuf."
+    cd protobuf
+    sudo make install && sudo ldconfig
+  else
+    echo "Install protobuf from web."
+    git clone https://github.com/google/protobuf.git
+    cd protobuf && git checkout v3.1.0
+    ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && sudo ldconfig
+  fi
 else
   echo "Protobuf already installed."
 fi

@@ -12,6 +12,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 cmake_policy(SET CMP0011 OLD)
 include(ExternalProject)
 
+################### threads library ########################
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 ################### project settings ########################
 project (tcpinfo_lib C CXX)
@@ -24,11 +27,7 @@ link_directories(${IPROUTE2_LIBS_DIR})
 
 ################### protobuf compiler ########################
 find_package(Threads REQUIRED)
-find_package(Protobuf)
-if (NOT PROTOBUF_FOUND)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/ext/protobuf)
-endif()
-
+find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 # Include path for proto files.
@@ -75,6 +74,7 @@ add_test(tcpinfo_proto tcpinfo_lib_test)
 ################### connection_cache library  ########################
 add_library(connection_cache_lib
     ${SRC_DIR}/connection_cache.cc ${SRC_DIR}/connection_cache.h)
+target_link_libraries(connection_cache_lib Threads::Threads)
 
    #================= unit tests ======================
 add_executable(connection_cache_test
