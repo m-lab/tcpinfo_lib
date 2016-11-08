@@ -1,6 +1,6 @@
 #!/bin/bash
-# Alternative mechanism for checking and installing protobuf support.
-# Prefer to use the CMake external project in CMakeLists.txt
+# Check out, build, and install protobuf support.
+# Building from source as that is recommended in protobuf README.md file.
 
 set -x
 # check to see if protobuf tools already exist.
