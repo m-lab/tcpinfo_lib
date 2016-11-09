@@ -4,12 +4,19 @@ cmake_minimum_required (VERSION 2.8.6)
 ENABLE_LANGUAGE(C)
 ENABLE_LANGUAGE(CXX)
 
-if (NOT DEFINED COVERAGE_FLAGS)
-  set(COVERAGE_FLAGS "-g -O0 --coverage") # debug, no optimisation
-endif()
-MESSAGE(STATUS "Coverage flags: " ${COVERAGE_FLAGS})
+if (COVERAGE_FLAGS STREQUAL "")
+# If we aren't instrumenting for coverage, then add optimization flags.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+else (COVERAGE_FLAGS STREQUAL "")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_FLAGS}")
+endif (COVERAGE_FLAGS STREQUAL "")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS} -std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+
+MESSAGE(STATUS "CXX flags: " ${CMAKE_CXX_FLAGS})
 
 # This allows the external project to push and pop environment.
 cmake_policy(SET CMP0011 OLD)

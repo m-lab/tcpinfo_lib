@@ -4,7 +4,7 @@
 
 set -x
 # check to see if protobuf tools already exist.
-LIBS=`/usr/bin/pkg-config --libs protobuf`
+LIBS=`/usr/bin/pkg-config --libs protobufxxx`
 if [ $? -ne 0 ] ; then
   if [ -r protobuf/configure ] ; then
     echo "Using cached protobuf."
@@ -13,8 +13,13 @@ if [ $? -ne 0 ] ; then
   else
     echo "Install protobuf from web."
     git clone https://github.com/google/protobuf.git
+    # For unknown reason, compiling protobuf on travis-ci breaks with clang.
+    # So we override to always use gcc.
+    CC=gcc
+    CXX=g++
     cd protobuf && git checkout v3.1.0
-    ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && sudo ldconfig
+    ./autogen.sh && ./configure --prefix=/usr && make && \
+      sudo make install && sudo ldconfig
   fi
 else
   echo "Protobuf already installed."

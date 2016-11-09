@@ -4,23 +4,50 @@ language: cpp
 
 matrix:
   include:
+    # Build with gcc and coverage.
     - compiler: gcc
       addons:
         apt:
           sources:
           - ubuntu-toolchain-r-test
-          - llvm-toolchain-trusty-3.9
           packages:
           - gcc-4.9
           - g++-4.9
           - lcov
+      install:
+        # Install coverage tools. (Used only for gcc build)
+        - cd ${TRAVIS_BUILD_DIR}
+        - sudo apt-get -qq install lcov
+        - gem install coveralls-lcov
+        - lcov --version
       env:
-        - CXX_COMPILER=g++ C_COMPILER=gcc
-        - COVERAGE_FLAGS="-g -O0 --coverage" # debug, no optimisation
+        - CXX_COMPILER=g++ C_COMPILER=gcc \
+          COVERAGE_FLAGS="-g -O0 --coverage" # debug, no optimization
+      after_success:
+        # Collect coverage data.
+        - cd ${TRAVIS_BUILD_DIR}
+        - lcov --directory build/ --capture -o coverage.info
+        - lcov -r coverage.info '*_test.cc' '*.pb.h' '*.pb.cc' '*/iproute2/*' '/usr/include/*' '*/gtest/*' -o coverage.info
+        - lcov --list coverage.info
+        # Upload the coverage info to coveralls.
+        - coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info
+
+    # Build with clang and optimization.
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-3.6
+          packages:
+          - clang-3.6
+          - lcov
+      env:
+        - CXX_COMPILER=clang++ C_COMPILER=clang
 
 before_install:
+- clang --version
 - sudo apt-get update -qq
-- sudo apt-get install -y libopencv-dev
 
 install:
 # install GTest and GMock
@@ -29,11 +56,6 @@ install:
 - "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
 - sudo apt-get -qq install google-mock
 - "cd /usr/src/gmock && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
-# Install coverage tools.
-- cd ${TRAVIS_BUILD_DIR}
-- sudo apt-get -qq install lcov
-- gem install coveralls-lcov
-- lcov --version
 - g++ --version
 
 before_cache:
@@ -48,19 +70,12 @@ cache:
 
 before_script:
 # Check if protobuf compiler is present, and load if it is not.
+# Note that this builds with gcc, regardless of which compiler is specified.
 - sudo ./install-protobuf.sh
 
 script:
 # Build and run tests.
 - cd build
-- cmake -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER .. && cmake --build .
+- cmake -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DCOVERAGE_FLAGS="$COVERAGE_FLAGS" .. && cmake --build .
 - ctest -V
 
-after_success:
-# Collect coverage data.
-- cd ${TRAVIS_BUILD_DIR}
-- lcov --directory build/ --capture -o coverage.info
-- lcov -r coverage.info '*_test.cc' '*.pb.h' '*.pb.cc' '*/iproute2/*' '/usr/include/*' '*/gtest/*' -o coverage.info
-- lcov --list coverage.info
-# Upload the coverage info to coveralls.
-- coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info
