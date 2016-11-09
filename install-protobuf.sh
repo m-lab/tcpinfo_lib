@@ -4,7 +4,7 @@
 
 set -x
 # check to see if protobuf tools already exist.
-LIBS=`/usr/bin/pkg-config --libs protobufxxx`
+LIBS=`/usr/bin/pkg-config --libs protobuf`
 if [ $? -ne 0 ] ; then
   if [ -r protobuf/configure ] ; then
     echo "Using cached protobuf."
