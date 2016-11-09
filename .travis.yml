@@ -14,7 +14,9 @@ matrix:
           - gcc-4.9
           - g++-4.9
           - lcov
-      env: CXX_COMPILER=g++ C_COMPILER=gcc ENABLE_COVERAGE=true
+      env:
+        - CXX_COMPILER=g++ C_COMPILER=gcc
+        - COVERAGE_FLAGS="-g -O0 --coverage" # debug, no optimisation
 
 before_install:
 - sudo apt-get update -qq
