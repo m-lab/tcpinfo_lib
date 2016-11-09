@@ -4,6 +4,13 @@ cmake_minimum_required (VERSION 2.8.6)
 ENABLE_LANGUAGE(C)
 ENABLE_LANGUAGE(CXX)
 
+# .travis.yml invokes CMake with CXX_COMPILER defined.  But on workstation,
+# we want to define that ourselves to be clang (if available).
+if (NOT DEFINED CXX_COMPILER)
+  set(CXX_COMPILER "clang++")
+  set(C_COMPILER "clang")
+endif (NOT DEFINED CXX_COMPILER)
+
 if (COVERAGE_FLAGS STREQUAL "")
 # If we aren't instrumenting for coverage, then add optimization flags.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
