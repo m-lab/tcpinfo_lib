@@ -1,6 +1,9 @@
 # tcpinfo_lib
-Wrapper library for collecting data through netlink.
+[![Test Status](https://travis-ci.org/gfr10598/tcpinfo_lib.svg)](https://travis-ci.org/gfr10598/tcpinfo_lib)
+[![Coverage Status](https://coveralls.io/repos/github/gfr10598/tcpinfo_lib/badge.svg)](https://coveralls.io/github/gfr10598/tcpinfo_lib)
 
+Wrapper library for collecting data through netlink.
+ 
 NDT and Sidestream both will require functionality related to but not entirely provided by the netlink library.  This repository will hold primarily OO code that encapsulates calls to netlink library functions, and basic manipulation of the resulting instrumentation data, including protobuf generation.
 
 # Building
@@ -28,13 +31,19 @@ config is working, but will hopefully add clang config later.
 ├── CMakeLists.txt
 ├── ext
 │   ├── gtest
+│   │   └── CMakeLists.txt
 │   └── iproute2
+│       └── CMakeLists.txt
 ├── install-protobuf.sh
 ├── LICENSE
 ├── README.md
 └── src
+    ├── connection_cache.cc
+    ├── connection_cache.h
+    ├── connection_cache_test.cc
     ├── tcpinfo_lib.cc
     ├── tcpinfo_lib.h
+    ├── tcpinfo_lib_test.cc
     ├── tcpinfo.proto
     └── tcpinfo_proto_test.cc
 ```

@@ -11,10 +11,20 @@ if [ $? -ne 0 ] ; then
     cd protobuf
     sudo make install && sudo ldconfig
   else
+    set -e
     echo "Install protobuf from web."
     git clone https://github.com/google/protobuf.git
-    cd protobuf && git checkout v3.1.0
-    ./autogen.sh && ./configure --prefix=/usr && make && sudo make install && sudo ldconfig
+    # For unknown reasons, compiling protobuf on travis-ci breaks with clang.
+    # So we override to always use gcc.
+    CC=gcc
+    CXX=g++
+    cd protobuf
+    git checkout v3.1.0
+    ./autogen.sh
+    ./configure --prefix=/usr
+    make
+    sudo make install
+    sudo ldconfig
   fi
 else
   echo "Protobuf already installed."

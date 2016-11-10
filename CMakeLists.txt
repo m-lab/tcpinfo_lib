@@ -4,10 +4,26 @@ cmake_minimum_required (VERSION 2.8.6)
 ENABLE_LANGUAGE(C)
 ENABLE_LANGUAGE(CXX)
 
+# .travis.yml invokes CMake with CXX_COMPILER defined.  But on workstation,
+# we want to define that ourselves to be clang (if available).
+if (NOT DEFINED CXX_COMPILER)
+  set(CXX_COMPILER "clang++")
+  set(C_COMPILER "clang")
+endif (NOT DEFINED CXX_COMPILER)
+
+if (COVERAGE_FLAGS STREQUAL "")
+# If we aren't instrumenting for coverage, then add optimization flags.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+else (COVERAGE_FLAGS STREQUAL "")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_FLAGS}")
+endif (COVERAGE_FLAGS STREQUAL "")
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
-# TODO(gfr) This should be conditional on coverage flags.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0") # debug, no optimisation
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage") # enabling coverage
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+
+MESSAGE(STATUS "CXX flags: " ${CMAKE_CXX_FLAGS})
 
 # This allows the external project to push and pop environment.
 cmake_policy(SET CMP0011 OLD)
