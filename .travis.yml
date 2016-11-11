@@ -76,8 +76,7 @@ before_script:
 script:
 # Build and run tests.
 - cd build
-- cmake -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER \
-  -DCOVERAGE_FLAGS="$COVERAGE_FLAGS" ..
+- cmake -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DCOVERAGE_FLAGS="$COVERAGE_FLAGS" ..
 - cmake --build .
 - ctest -V
 
