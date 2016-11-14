@@ -25,6 +25,7 @@ extern "C" {
 #include <linux/tcp.h>
 
 #include "libnetlink.h"
+#include "tcpinfo_c_adapter.h"  // declaration of update_record.
 }
 
 namespace mlab {
@@ -344,6 +345,11 @@ void TCPInfoPoller::on_close_wrapper(int protocol,
 
 void TCPInfoPoller::PollOnce() {
   using namespace std::placeholders;
+  // TODO(gfr) - Pass in update_record bound to `this`?
+  if (fetch_tcpinfo(update_record)) {
+    // TODO - handle errors.  Not at all clear what to do.  Probably
+    // just LOG(FATAL).
+  }
   tracker_.VisitMissingRecords(std::bind(&TCPInfoPoller::on_close_wrapper,
                                          this, _1, _2, _3));
   tracker_.increment_round();
@@ -427,3 +433,16 @@ TCPState GetStateFromStr(const std::string& nlmsg) {
 
 mlab::netlink::TCPInfoPoller g_poller_;
 
+extern "C" {
+// Signature must match rtnl_filter_t.
+// All args must be non-null.
+int update_record(const struct sockaddr_nl *addr, struct nlmsghdr *nlh,
+                  void *arg) {
+  auto *diag_arg = (struct inet_diag_arg *)arg;
+  auto *msg = (struct inet_diag_msg *)NLMSG_DATA(nlh);
+  // This has to be tied to a specific instance of the TCPInfoPoller. 8-(
+  g_poller_.Stash(
+      msg->idiag_family, diag_arg->protocol, msg->id, nlh);
+  return 0;
+}
+}  // extern "C"
