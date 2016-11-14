@@ -396,6 +396,26 @@ std::string raw19(
     "\x63\x75\x62\x69\x63\x00\x00\x00", 0x110);
 // 001000
 
+
+TEST(Parser, IPToString) {
+  InetDiagMsgProto p4;
+  p4.set_family(InetDiagMsgProto_AddressFamily_AF_INET);
+  auto* sock_id = p4.mutable_sock_id();
+  auto* src = sock_id->mutable_source();
+  src->set_port(1234);
+  src->set_ip("abcd", 4);
+  EXPECT_EQ(ToString(p4.sock_id().source()), "97.98.99.100:1234");
+
+  InetDiagMsgProto p6;
+  p6.set_family(InetDiagMsgProto_AddressFamily_AF_INET6);
+  auto* sock_id6 = p6.mutable_sock_id();
+  auto* src6 = sock_id6->mutable_source();
+  src6->set_port(5678);
+  src6->set_ip("abcdefghijklmnop", 16);
+  EXPECT_EQ(ToString(p6.sock_id().source()),
+            "[6162:6364:6566:6768:696a:6b6c:6d6e:6f70]:5678");
+}
+
 TEST(Parser, LotsOfFields) {
   TCPInfoParser parser;
   auto* hdr = (const struct nlmsghdr*)raw1.c_str();
@@ -471,13 +491,21 @@ TEST(Parser, MoreSamples) {
 }
 
 namespace {
-int visit_count = 0;
+int on_close_count = 0;
+// On close should only be called with empty new messages.
 bool new_msg_not_empty = false;
+
+int on_new_state_count = 0;
 
 void on_close(int protocol, const std::string& old_msg, const std::string& new_msg) {
   new_msg_not_empty |= !new_msg.empty();
-  visit_count++;
+  on_close_count++;
 }
+
+void on_new_state(int protocol, const std::string& old_msg, const std::string& new_msg) {
+  on_new_state_count++;
+}
+
 void Print(const struct nlmsghdr* nlh) {
   const google::protobuf::EnumDescriptor* enum_desc =
           mlab::netlink::TCPState_descriptor();
@@ -496,6 +524,7 @@ TEST(Poller, StashAndOnClose) {
 
   TCPInfoPoller p;
   p.OnClose(on_close, {mlab::netlink::TCPState::ESTABLISHED});
+  p.OnNewState(on_new_state);  // always call for new states.
 
   {
     auto* nlh = (const struct nlmsghdr*)raw2.c_str();
@@ -515,15 +544,27 @@ TEST(Poller, StashAndOnClose) {
     p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
     Print(nlh);
   }
+  // All three of these are new states.
+  EXPECT_EQ(on_new_state_count, 3);
+
   // For now this just visits missing rounds, and increments round();
   p.PollOnce();
-  EXPECT_EQ(visit_count, 0);
+  EXPECT_EQ(on_close_count, 0);
 
-  // This one should cause the on_close_ to be invoked.
+  // Try another round.  Same message should NOT trigger on_new_state.
+  {
+    auto* nlh = (const struct nlmsghdr*)raw9.c_str();
+    auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
+    p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
+    Print(nlh);
+  }
+  EXPECT_EQ(on_new_state_count, 3);
+
+  // This one should cause the on_close_ to be invoked for two messages.
   p.PollOnce();
-  // We put in one ESTABLISHED, and two OTHER.  We should only see one.
-  EXPECT_EQ(visit_count, 1);
-
+  // We put in one ESTABLISHED, and one OTHER.  We should only see ESTABLISHED.
+  EXPECT_EQ(on_close_count, 1);
+  EXPECT_FALSE(new_msg_not_empty);  // OnClose should always have empty messages.
 }
 
 // TODO

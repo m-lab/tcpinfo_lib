@@ -371,11 +371,7 @@ void TCPInfoPoller::OnClose(Handler handler,
 
 void TCPInfoPoller::OnChange(Handler handler,
                              const std::vector<TCPState>& states) {
-  on_change_ = handler;
-  on_change_states_ = 0;
-  for (auto state : states) {
-    on_change_states_ |= 1 << state;
-  }
+  // TODO(gfr)
 }
 
 void TCPInfoPoller::OnNewState(Handler handler,
