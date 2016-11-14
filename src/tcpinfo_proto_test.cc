@@ -441,11 +441,6 @@ TEST(Parser, LotsOfFields) {
   fprintf(stderr, "%d\n", proto.ByteSize());
 }
 
-// TODO - these samples currently seem to contain BBR info, which
-// is surprising.  Are we running internal google kernels that
-// are already equipt with this data, or is it aliasing some other
-// data?
-
 TEST(Parser, MoreSamples) {
   TCPInfoParser parser;
   auto* hdr = (const struct nlmsghdr*)raw2.c_str();
@@ -475,10 +470,64 @@ TEST(Parser, MoreSamples) {
   }
 }
 
-// TODO
-// Test for ipb4 parsing
-// Test for BBR info parsing
+namespace {
+int visit_count = 0;
+bool new_msg_not_empty = false;
+
+void on_close(int protocol, const std::string& old_msg, const std::string& new_msg) {
+  new_msg_not_empty |= !new_msg.empty();
+  visit_count++;
+}
+void Print(const struct nlmsghdr* nlh) {
+  const google::protobuf::EnumDescriptor* enum_desc =
+          mlab::netlink::TCPState_descriptor();
+  TCPInfoParser parser;
+  auto proto = parser.ParseNLMsg(nlh, IPPROTO_TCP);
+  fprintf(stderr, "%5d %s\n",
+          proto.inet_diag_msg().sock_id().source().port(),
+          enum_desc->value(
+              proto.inet_diag_msg().state())
+                  ->options().GetExtension(mlab::netlink::name).c_str());
+}
+}  // anonymous namespace
+
+TEST(Poller, StashAndOnClose) {
 // Stash and onclose in another file.
+
+  TCPInfoPoller p;
+  p.OnClose(on_close, {mlab::netlink::TCPState::ESTABLISHED});
+
+  {
+    auto* nlh = (const struct nlmsghdr*)raw2.c_str();
+    auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
+    p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
+    Print(nlh);
+  }
+  {
+    auto* nlh = (const struct nlmsghdr*)raw8.c_str();
+    auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
+    p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
+    Print(nlh);
+  }
+  {
+    auto* nlh = (const struct nlmsghdr*)raw9.c_str();
+    auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
+    p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
+    Print(nlh);
+  }
+  // For now this just visits missing rounds, and increments round();
+  p.PollOnce();
+  EXPECT_EQ(visit_count, 0);
+
+  // This one should cause the on_close_ to be invoked.
+  p.PollOnce();
+  // We put in one ESTABLISHED, and two OTHER.  We should only see one.
+  EXPECT_EQ(visit_count, 1);
+
+}
+
+// TODO
+// Test for BBR info parsing
 //
 }  // namespace netlink
 }  // namespace mlab

@@ -337,6 +337,10 @@ void TCPInfoPoller::on_close_wrapper(int protocol,
 }
 
 void TCPInfoPoller::PollOnce() {
+  using namespace std::placeholders;
+  tracker_.VisitMissingRecords(std::bind(&TCPInfoPoller::on_close_wrapper,
+                                         this, _1, _2, _3));
+  tracker_.increment_round();
 }
 
 void TCPInfoPoller::PollContinuously(uint polling_interval_msec) {}
