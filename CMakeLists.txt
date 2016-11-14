@@ -66,6 +66,7 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
     ${SRC_DIR}/tcpinfo.proto)
 add_library(tcpinfo_lib
     ${SRC_DIR}/tcpinfo_lib.cc ${SRC_DIR}/tcpinfo_lib.h
+    ${SRC_DIR}/tcpinfo_c_adapter.h ${SRC_DIR}/tcpinfo_c_adapter.c
     ${PROTO_HDRS} ${PROTO_SRCS})
 add_dependencies(tcpinfo_lib iproute2)
 
@@ -89,6 +90,17 @@ target_link_libraries(tcpinfo_proto_test
 
 add_test(tcpinfo_proto tcpinfo_proto_test)
 
+add_executable(tcpinfo_lib_test
+    ${SRC_DIR}/tcpinfo_lib_test.cc)
+add_dependencies(tcpinfo_lib_test googletest)
+
+target_link_libraries(tcpinfo_lib_test
+    ${GTEST_LIBS_DIR}/libgtest.a
+    ${GTEST_LIBS_DIR}/libgtest_main.a
+    tcpinfo_lib)
+
+add_test(tcpinfo_lib tcpinfo_lib_test)
+
 ################### connection_cache library  ########################
 add_library(connection_cache_lib
     ${SRC_DIR}/connection_cache.cc ${SRC_DIR}/connection_cache.h)
@@ -107,3 +119,13 @@ target_link_libraries(connection_cache_test
 
 add_test(connection_cache connection_cache_test)
 
+################### tcpinfo polling proto ########################
+add_executable(poll
+    ${SRC_DIR}/main.cc
+    ${SRC_DIR}/tcpinfo_c_adapter.c)
+add_dependencies(poll iproute2 tcpinfo_lib)
+target_link_libraries(poll
+    ${IPROUTE2_LIBS_DIR}/libnetlink.a
+    ${IPROUTE2_LIBS_DIR}/libutil.a
+    connection_cache_lib
+    tcpinfo_lib)
