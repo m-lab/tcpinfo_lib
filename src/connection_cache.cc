@@ -53,8 +53,6 @@ bool ConnectionTracker::UpdateRecord(size_t key, int protocol,
   }
 }
 
-// Iterate through the map, find any items that are from previous
-// round, and take action on them.
 void ConnectionTracker::VisitMissingRecords(
     std::function<void(int protocol, const std::string& old_msg,
                        const std::string& new_msg)> visitor) {
