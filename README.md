@@ -43,7 +43,6 @@ config is working, but will hopefully add clang config later.
     ├── connection_cache_test.cc
     ├── tcpinfo_lib.cc
     ├── tcpinfo_lib.h
-    ├── tcpinfo_lib_test.cc
     ├── tcpinfo.proto
     └── tcpinfo_proto_test.cc
 ```
