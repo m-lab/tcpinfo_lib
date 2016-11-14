@@ -6,6 +6,8 @@
 
 syntax = "proto2";
 
+import "google/protobuf/descriptor.proto";
+
 package mlab.netlink;
 
 /*
@@ -58,23 +60,29 @@ message InetSocketIDProto {
   optional fixed64 cookie = 6;
 }
 
+extend google.protobuf.EnumValueOptions {
+  optional string name = 54321;
+}
+
 // https://datatracker.ietf.org/doc/draft-ietf-tcpm-rfc793bis/
 enum TCPState {  //  from tcp_states.h
-  ESTABLISHED = 1;
-  SYN_SENT = 2;
-  SYN_RECV = 3;
-  FIN_WAIT1 = 4;
-  FIN_WAIT2 = 5;
-  TIME_WAIT = 6;
-  CLOSE = 7;
-  CLOSE_WAIT = 8;
-  LAST_ACK = 9;
-  LISTEN = 10;
-  CLOSING = 11; /* Now a valid state */
+  INVALID = 0 [(name)="Invalid"];
+  ESTABLISHED = 1 [(name)="Established"];
+  SYN_SENT = 2 [(name)="SynSent"];
+  SYN_RECV = 3 [(name)="SynRecv"];
+  FIN_WAIT1 = 4 [(name)="FinWait1"];
+  FIN_WAIT2 = 5 [(name)="FinWait2"];
+  TIME_WAIT = 6 [(name)="TimeWait"];
+  CLOSE = 7 [(name)="Close"];
+  CLOSE_WAIT = 8 [(name)="CloseWait"];
+  LAST_ACK = 9 [(name)="LastAck"];
+  LISTEN = 10 [(name)="Listen"];
+  CLOSING = 11 [(name)="Closing"];
 }
 
 message InetDiagMsgProto {
   enum AddressFamily {
+    // There are many other families, but for now we only care about these.
     AF_UNSPEC = 0;
     AF_INET = 2;
     AF_INET6 = 10;

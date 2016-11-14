@@ -11,14 +11,14 @@ if (NOT DEFINED CXX_COMPILER)
   set(C_COMPILER "clang")
 endif (NOT DEFINED CXX_COMPILER)
 
-if (COVERAGE_FLAGS STREQUAL "")
+if (NOT DEFINED COVERAGE_FLAGS OR COVERAGE_FLAGS STREQUAL "")
 # If we aren't instrumenting for coverage, then add optimization flags.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
-else (COVERAGE_FLAGS STREQUAL "")
+else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_FLAGS}")
-endif (COVERAGE_FLAGS STREQUAL "")
+endif ()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
@@ -70,6 +70,7 @@ add_library(tcpinfo_lib
 add_dependencies(tcpinfo_lib iproute2)
 
 target_link_libraries(tcpinfo_lib
+    connection_cache_lib
     ${CMAKE_THREAD_LIBS_INIT} ${PROTOBUF_LIBRARIES}
     ${IPROUTE2_LIBS_DIR}/libnetlink.a
     ${IPROUTE2_LIBS_DIR}/libutil.a)
@@ -77,16 +78,16 @@ target_link_libraries(tcpinfo_lib
    #================= unit tests ======================
 
 set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
-add_executable(tcpinfo_lib_test
+add_executable(tcpinfo_proto_test
     ${SRC_DIR}/tcpinfo_proto_test.cc)
-add_dependencies(tcpinfo_lib_test googletest)
+add_dependencies(tcpinfo_proto_test googletest)
 
-target_link_libraries(tcpinfo_lib_test
+target_link_libraries(tcpinfo_proto_test
     ${GTEST_LIBS_DIR}/libgtest.a
     ${GTEST_LIBS_DIR}/libgtest_main.a
     tcpinfo_lib)
 
-add_test(tcpinfo_proto tcpinfo_lib_test)
+add_test(tcpinfo_proto tcpinfo_proto_test)
 
 ################### connection_cache library  ########################
 add_library(connection_cache_lib

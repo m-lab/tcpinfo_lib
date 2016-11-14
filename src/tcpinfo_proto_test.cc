@@ -160,10 +160,10 @@ TEST(Parser, LotsOfFields) {
 
   // Check proper parsing of endpoints.
   EXPECT_EQ(ToString(proto.inet_diag_msg().sock_id().source()),
-            "2620:0:1003:413:ac8f:7971:3973:b48e:38625");
+            "[2620:0:1003:413:ac8f:7971:3973:b48e]:38625");
   // Don't really care if this changes, but useful to detect
   // when it does.
-  EXPECT_EQ(proto.ByteSize(), 191);
+  EXPECT_EQ(proto.ByteSize(), 185);
   fprintf(stderr, "%s\n", proto.DebugString().c_str());
   fprintf(stderr, "%d\n", proto.ByteSize());
 }

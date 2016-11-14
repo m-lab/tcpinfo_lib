@@ -14,15 +14,22 @@
 
 #include "tcpinfo_lib.h"
 
-#include "utils.h"
+#include <fstream>
+#include <string>
 
-#include <linux/inet_diag.h>
+#include "connection_cache.h"  // For ConnectionTracker
+
+extern "C" {
+#include <arpa/inet.h>
 #include <linux/sock_diag.h>
 #include <linux/tcp.h>
-#include <linux/unix_diag.h>
+
+#include "libnetlink.h"
+}
 
 namespace mlab {
 namespace netlink {
+
 namespace {
 // Extract a single 16 bit ipv6 field from byte array.
 // <ip> byte array
@@ -31,21 +38,36 @@ unsigned int extract(const std::string& ip, int n) {
   return (((unsigned char)(ip[n])) << 8) + (unsigned char)ip[n + 1];
 }
 
+TCPState GetState(struct inet_diag_msg* r) {
+  if (!TCPState_IsValid(r->idiag_state)) {
+    fprintf(stderr, "Invalid state: %d\n", r->idiag_state);
+    return TCPState::INVALID;
+  } else {
+    return TCPState(r->idiag_state);
+  }
+}
+
+TCPState GetState(const struct nlmsghdr* nlh) {
+  // TODO(gfr) Use C++ style casts.
+  return GetState((struct inet_diag_msg*)NLMSG_DATA(nlh));
+}
+
+InetDiagMsgProto::AddressFamily GetFamily(struct inet_diag_msg* r) {
+  auto family = r->idiag_family;
+  if (!InetDiagMsgProto_AddressFamily_IsValid(family)) {
+    fprintf(stderr, "Invalid family: %d\n", family);
+    return InetDiagMsgProto_AddressFamily_AF_UNSPEC;
+  } else {
+    return InetDiagMsgProto::AddressFamily(family);
+  }
+}
+
 // Parse primary inet_diag_msg into protobuf.
 // <r> Non-null pointer to message.
 // <proto> Non-null pointer to protobuf.
 void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
-  auto family = r->idiag_family;
-  if (!InetDiagMsgProto_AddressFamily_IsValid(family)) {
-    fprintf(stderr, "Invalid family: %d\n", family);
-  } else {
-    proto->set_family(InetDiagMsgProto::AddressFamily(family));
-  }
-  if (!TCPState_IsValid(r->idiag_state)) {
-    fprintf(stderr, "Invalid state: %d\n", r->idiag_state);
-  } else {
-    proto->set_state(TCPState(r->idiag_state));
-  }
+  proto->set_family(GetFamily(r));
+  proto->set_state(GetState(r));
 
   auto* sock_id = proto->mutable_sock_id();
   const uint32_t* cookie = r->id.idiag_cookie;
@@ -54,11 +76,23 @@ void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
 
   auto* src = sock_id->mutable_source();
   src->set_port(ntohs(r->id.idiag_sport));
-  src->set_ip(r->id.idiag_src, family == AF_INET ? 4 : 16);
 
   auto* dest = sock_id->mutable_destination();
   dest->set_port(ntohs(r->id.idiag_dport));
-  dest->set_ip(r->id.idiag_dst, family == AF_INET ? 4 : 16);
+
+  switch (proto->family()) {
+  case InetDiagMsgProto_AddressFamily_AF_INET:
+    src->set_ip(r->id.idiag_src, 4);
+    dest->set_ip(r->id.idiag_dst, 4);
+    break;
+  case InetDiagMsgProto_AddressFamily_AF_INET6:
+    src->set_ip(r->id.idiag_src, 16);
+    dest->set_ip(r->id.idiag_dst, 16);
+    break;
+  case InetDiagMsgProto_AddressFamily_AF_UNSPEC:
+    // We don't know how to interpret the addresses, so leave them unset.
+    break;
+  }
 
   if (r->idiag_timer) proto->set_timer(r->idiag_timer);
   if (r->idiag_retrans) proto->set_retrans(r->idiag_retrans);
@@ -89,7 +123,7 @@ void ParseBBRInfo(const struct rtattr* rta, BBRInfoProto* proto) {
 // <proto> Non-null pointer to protobuf.
 void ParseTCPInfo(const struct rtattr* rta, TCPInfoProto* proto) {
   const struct tcp_info* info;
-  int len = RTA_PAYLOAD(rta);
+  unsigned len = RTA_PAYLOAD(rta);
 
   /* workaround for older kernels with fewer fields */
   if (len < sizeof(*info)) {
@@ -203,6 +237,8 @@ void ParseSKMemInfo(const struct rtattr* rta, SocketMemInfoProto* proto) {
 }  // anonymous namespace
 
 // Create a string representation of an IP endpoint.
+// For ipv4, d.d.d.d:port
+// For ipv6, [xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx]:port
 std::string ToString(const EndPoint& ep) {
   char result[64];
   const auto& ip = ep.ip();
@@ -211,7 +247,7 @@ std::string ToString(const EndPoint& ep) {
             (unsigned char)ip[1], (unsigned char)ip[2], (unsigned char)ip[3],
             ep.port());
   } else if (ip.size() == 16) {
-    sprintf(result, "%x:%x:%x:%x:%x:%x:%x:%x:%u", extract(ip, 0),
+    sprintf(result, "[%x:%x:%x:%x:%x:%x:%x:%x]:%u", extract(ip, 0),
             extract(ip, 2), extract(ip, 4), extract(ip, 6), extract(ip, 8),
             extract(ip, 10), extract(ip, 12), extract(ip, 14), ep.port());
   } else {
@@ -264,6 +300,7 @@ void TCPInfoParser::NLMsgToProto(const struct nlmsghdr* nlh, Protocol protocol,
         if (!proto->has_socket_mem()) {
           ParseMemInfo(rta, proto->mutable_socket_mem());
         }
+        break;
       case INET_DIAG_BBRINFO:
         ParseBBRInfo(rta, proto->mutable_bbr_info());
         break;
@@ -288,7 +325,20 @@ bool ConnectionFilter::Accept(
 }
 bool ConnectionFilter::Accept(const struct nlmsghdr* msg) const { return true; }
 
-void TCPInfoPoller::PollOnce() {}
+/********************************************************************************/
+
+void TCPInfoPoller::on_close_wrapper(int protocol,
+                                     const std::string& old_nlmsg,
+                                     const std::string& new_nlmsg) {
+  if (on_close_ && (!on_close_states_ ||
+                        (on_close_states_ & (1 << GetStateFromStr(old_nlmsg))))) {
+    on_close_(protocol, old_nlmsg, new_nlmsg);
+  }
+}
+
+void TCPInfoPoller::PollOnce() {
+}
+
 void TCPInfoPoller::PollContinuously(uint polling_interval_msec) {}
 
 void TCPInfoPoller::Break() {}
@@ -306,8 +356,65 @@ ConnectionFilter::Token TCPInfoPoller::AddFilter(ConnectionFilter filter) {
   return ConnectionFilter::Token();
 }
 
-void TCPInfoPoller::OnClose(Handler handler) {}
-void TCPInfoPoller::OnChange(Handler handler) {}
+void TCPInfoPoller::OnClose(Handler handler,
+                            const std::vector<TCPState>& states) {
+  on_close_ = handler;
+  on_close_states_ = 0;
+  for (auto state : states) {
+    on_close_states_ |= 1 << state;
+  }
+}
+
+void TCPInfoPoller::OnChange(Handler handler,
+                             const std::vector<TCPState>& states) {
+  on_change_ = handler;
+  on_change_states_ = 0;
+  for (auto state : states) {
+    on_change_states_ |= 1 << state;
+  }
+}
+
+void TCPInfoPoller::OnNewState(Handler handler,
+                               const std::vector<TCPState>& states) {
+  on_new_state_ = handler;
+  on_new_state_states_ = 0;
+  for (auto state : states) {
+    on_new_state_states_ |= 1 << state;
+  }
+}
+
+void TCPInfoPoller::Stash(int family, int protocol,
+                          const struct inet_diag_sockid id,
+                          const struct nlmsghdr* nlh) {
+  auto new_state = GetState(nlh);
+  std::string old_data =
+      tracker_.UpdateFromNLMsg(family, protocol, id, nlh);
+
+  // Check if this is an existing connection.
+  if (!old_data.empty()) {
+    // TODO(gfr) Use StatusOr?
+    if (old_data == "Ignoring local") return;
+
+    auto old_state = GetStateFromStr(old_data);
+    // If old and new state are same, we will report it later.
+    if (old_state == new_state) return;
+  }
+
+  if (on_new_state_ && (!on_new_state_states_ ||
+                        (on_new_state_states_ & (1 << new_state)))) {
+    std::string new_data(reinterpret_cast<const char*>(nlh), nlh->nlmsg_len);
+    on_new_state_(protocol, old_data, new_data);
+  }
+}
+
+// TODO - consolidate with GetState
+TCPState GetStateFromStr(const std::string& data) {
+  auto* nlh = reinterpret_cast<const struct nlmsghdr*>(data.c_str());
+  return GetState(nlh);
+}
 
 }  // namespace netlink
 }  // namespace mlab
+
+mlab::netlink::TCPInfoPoller g_poller_;
+

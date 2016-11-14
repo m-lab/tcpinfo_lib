@@ -16,7 +16,11 @@
 * class ConnectionTracker
 ******************************************************************************/
 
+#ifndef MLAB_CONNECTION_CACHE_H
+#define MLAB_CONNECTION_CACHE_H
+
 #include <unordered_map>
+#include <functional>
 
 extern "C" {
 #include <linux/inet_diag.h>
@@ -46,13 +50,18 @@ class ConnectionTracker {
   bool UpdateRecord(size_t key, int protocol, std::string* data);
 
   // Starting from nlhmsg, and sockid, compute hash, and UpdateRecord.
-  // Returns true if this is a new connection.
-  bool UpdateFromNLMsg(int family, int protocol,
-                       const struct ::inet_diag_sockid id,
-                       const struct ::nlmsghdr* nlh);
+  // Returns previous record message contents, which will be empty if
+  // this is a new connection.
+  // NOTE: If this is a LOCAL connection, the special string "Ingoring local" is
+  // returned.
+  std::string UpdateFromNLMsg(int family, int protocol,
+                              const struct ::inet_diag_sockid id,
+                              const struct ::nlmsghdr* nlh);
 
   // Visit all records that were not updated on this round.
-  void VisitMissingRecords(void (*visitor)(const Record& record));
+  void VisitMissingRecords(
+      std::function<void(int protocol, const std::string& old_msg,
+                         const std::string& new_msg)> visitor);
 
   void increment_round() { ++round_; }  // Don't care about wrapping.
   size_t size() const { return connections_.size(); }
@@ -61,6 +70,6 @@ class ConnectionTracker {
   ConnectionMap connections_;
   int round_ = 1;
 };
-
-extern ConnectionTracker g_tracker;
 }  // namespace mlab
+
+#endif // MLAB_CONNECTION_CACHE_H
