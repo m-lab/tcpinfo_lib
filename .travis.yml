@@ -52,11 +52,11 @@ before_install:
 install:
 # install GTest and GMock
 # TODO(gfr) See if there is a faster way to install these...
-- sudo apt-get -qq install libgtest-dev
-- "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
-- sudo apt-get -qq install google-mock
-- "cd /usr/src/gmock && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
-- g++ --version
+#- sudo apt-get -qq install libgtest-dev
+#- "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
+#- sudo apt-get -qq install google-mock
+#- "cd /usr/src/gmock && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
+#- g++ --version
 
 before_cache:
 - cd ${TRAVIS_BUILD_DIR}
