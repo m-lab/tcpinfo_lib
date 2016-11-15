@@ -91,6 +91,7 @@ void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
     break;
   case InetDiagMsgProto_AddressFamily_AF_UNSPEC:
     // We don't know how to interpret the addresses, so leave them unset.
+    // TODO(gfr) Log a warning here.
     break;
   }
 
@@ -417,7 +418,7 @@ void TCPInfoPoller::Stash(int family, int protocol,
 // TODO - consolidate with GetState
 // `nlmsg` byte string containing (binary) nlmsg data.
 TCPState GetStateFromStr(const std::string& nlmsg) {
-  auto* nlh = reinterpret_cast<const struct nlmsghdr*>(data.c_str());
+  auto* nlh = reinterpret_cast<const struct nlmsghdr*>(nlmsg.data());
   return GetState(nlh);
 }
 
