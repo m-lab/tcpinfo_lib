@@ -30,7 +30,8 @@ matrix:
         - lcov -r coverage.info '*_test.cc' '*.pb.h' '*.pb.cc' '*/iproute2/*' '/usr/include/*' '*/gtest/*' -o coverage.info
         - lcov --list coverage.info
         # Upload the coverage info to coveralls.
-        - coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info
+        #- coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info
+        - coveralls-lcov coverage.info
 
     # Build with clang and optimization.
     - compiler: clang
