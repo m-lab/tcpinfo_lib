@@ -1,6 +1,4 @@
-# tcpinfo_lib
-[![Test Status](https://travis-ci.org/gfr10598/tcpinfo_lib.svg)](https://travis-ci.org/gfr10598/tcpinfo_lib)
-[![Coverage Status](https://coveralls.io/repos/github/gfr10598/tcpinfo_lib/badge.svg)](https://coveralls.io/github/gfr10598/tcpinfo_lib)
+# tcpinfo_lib [![Test Status](https://travis-ci.org/m-lab/tcpinfo_lib.svg)](https://travis-ci.org/m-lab/tcpinfo_lib) [![Coverage Status](https://coveralls.io/repos/github/m-lab/tcpinfo_lib/badge.svg)](https://coveralls.io/github/m-lab/tcpinfo_lib)
 
 Wrapper library for collecting data through netlink.
  
