@@ -325,13 +325,18 @@ bool ConnectionFilter::Accept(
 }
 bool ConnectionFilter::Accept(const struct nlmsghdr* msg) const { return true; }
 
-/********************************************************************************/
+/******************************************************************************
+*                   TCPInfoPoller implementation.
+*******************************************************************************/
 
+// Handler wrapper function to apply state filter before calling on_close_.
+// `old_nlmsg` byte string containing previous (binary) nlmsg data from cache.
+// `new_nlmsg` byte string containing new binary nlmsg data.
 void TCPInfoPoller::on_close_wrapper(int protocol,
                                      const std::string& old_nlmsg,
                                      const std::string& new_nlmsg) {
   if (on_close_ && (!on_close_states_ ||
-                        (on_close_states_ & (1 << GetStateFromStr(old_nlmsg))))) {
+                    (on_close_states_ & (1 << GetStateFromStr(old_nlmsg))))) {
     on_close_(protocol, old_nlmsg, new_nlmsg);
   }
 }
@@ -387,6 +392,7 @@ void TCPInfoPoller::Stash(int family, int protocol,
                           const struct inet_diag_sockid id,
                           const struct nlmsghdr* nlh) {
   auto new_state = GetState(nlh);
+  // Byte string containing cached nlmsg data.
   std::string old_data =
       tracker_.UpdateFromNLMsg(family, protocol, id, nlh);
 
@@ -402,13 +408,15 @@ void TCPInfoPoller::Stash(int family, int protocol,
 
   if (on_new_state_ && (!on_new_state_states_ ||
                         (on_new_state_states_ & (1 << new_state)))) {
+    // Byte string containing the nlmsg data.
     std::string new_data(reinterpret_cast<const char*>(nlh), nlh->nlmsg_len);
     on_new_state_(protocol, old_data, new_data);
   }
 }
 
 // TODO - consolidate with GetState
-TCPState GetStateFromStr(const std::string& data) {
+// `nlmsg` byte string containing (binary) nlmsg data.
+TCPState GetStateFromStr(const std::string& nlmsg) {
   auto* nlh = reinterpret_cast<const struct nlmsghdr*>(data.c_str());
   return GetState(nlh);
 }

@@ -26,6 +26,8 @@ extern "C" {
 
 namespace mlab {
 
+// `data` is arbitrary (possibly binary) data to be cached under key.
+// It will typically by nlmsg data.
 bool ConnectionTracker::UpdateRecord(size_t key, int protocol,
                                      std::string* data) {
   const auto& it = connections_.find(key);
@@ -107,7 +109,7 @@ std::string ConnectionTracker::UpdateFromNLMsg(
   size_t key = HashConnection(id, family);
   if (key == 0) return "Ignoring local";
 
-  // Creates a new string, copying the contents of nlh.
+  // Creates a new byte string, copying the contents of nlh.
   std::string data(reinterpret_cast<const char*>(nlh), nlh->nlmsg_len);
   // This swaps the string value.
   UpdateRecord(key, protocol, &data);

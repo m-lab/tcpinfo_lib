@@ -39,15 +39,17 @@ namespace mlab {
 class ConnectionTracker {
  public:
   struct Record {
-    int round;
+    int round;  // Used to track which records have been updated.
     int protocol;
-    std::string msg;
+    std::string msg;  // String containing (possibly binary) cached data.
   };
 
   using ConnectionMap = std::unordered_map<size_t, Record>;
 
   // Locate connection record, update round, and swap its data.
   // Returns true if this is a new connection.
+  // `data` is arbitrary (possibly binary) data to be cached under key.
+  // It will typically by nlmsg data.
   bool UpdateRecord(size_t key, int protocol, std::string* data);
 
   // Compute key from socket <id>, and call UpdateRecord on non-local
@@ -60,7 +62,8 @@ class ConnectionTracker {
 
   // Iterate through the map, identifying all items that were not updated on
   // the previous round.  Execute provided function on such items, and remove
-  // them from the cache.
+  // them from the cache.  Note: `new_msg` function arg will be empty, and is
+  // only included for consistency with other visitor types.
   void VisitMissingRecords(
       std::function<void(int protocol, const std::string& old_msg,
                          const std::string& new_msg)> visitor);

@@ -98,6 +98,8 @@ class TCPInfoPoller {
   // Handler to be called when an event occurs.
   // Message ownership is NOT transfered, and handler code should not retain
   // references to the message after returning.
+  // `old_nlmsg` std::string containing previous binary nlmsg data from cache.
+  // `new_nlmsg` std::string containing new binary nlmsg data.
   using Handler = std::function<void(int protocol,
                                      const std::string& old_nlmsg,
                                      const std::string& new_nlmsg)>;
