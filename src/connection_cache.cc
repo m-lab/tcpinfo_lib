@@ -42,6 +42,7 @@ bool ConnectionTracker::UpdateRecord(size_t key, int protocol,
     // TODO(gfr) In addition to stashing the data, this should also parse
     // and compute various stats, e.g. min rtt.
     if (it->second.round == round_) {
+      // TODO(gfr) Replace with LOG_FIRST_N(ERROR, 20).
       static int count = 20;
       if (count > 0) {
         fprintf(stderr, "!!!!Double update. %d %lu\n", round_, key);
