@@ -29,6 +29,7 @@ namespace netlink {
 //   sack, cubic, wscale:7/7, rto:208, rtt:8.5/11, ato:40, mss:1398, cwnd:19,
 //   ssthresh:18, send 25.0M,bps, lastsnd:239268, lastrcv:239268, lastack:13972,
 //   rcv_rtt:36, rcv_space:28800
+//   PLUS fake rtattr containing bbrinfo.
 std::string raw1(
     "\x28\x01\x00\x00\x14\x00\x02\x00\x40\xE2\x01\x00\xA8\x4B\x00\x00"
     "\x0A\x01\x02\x00\x96\xE1\x01\xBB\x26\x20\x00\x00\x10\x03\x04\x13"
