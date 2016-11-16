@@ -1,7 +1,10 @@
 /**********************************************************************
+ * Demo polling implementation.
+ *
  * This captures 10 minutes of connection data.
- * Compressed with gzip, takes about 23 bytes / record.
- * Compressed with bzip2, takes about 17 bytes / record.  (15.5:1)
+ * Raw nlmsg data compressed with bzip2 takes about 15 bytes/record.
+ * Wire format protos compressed with bzip2 also takes about 15 bytes/record.
+ * bzip2 compressed proto.ShortDebugString takes about 16 bytes/record.
  **********************************************************************/
 
 #include <chrono>
@@ -11,7 +14,8 @@
 #include "tcpinfo_lib.h"  // Poller
 
 namespace {
-void output(const std::string& nlmsg, int protocol, std::string tag) {
+// Dump just raw nlmsg, without protocol info.
+void DumpNlMsg(const std::string& nlmsg) {
   std::ofstream out;
   out.open("nldata", std::ofstream::app | std::ofstream::binary);
   int len = nlmsg.size();
@@ -19,15 +23,21 @@ void output(const std::string& nlmsg, int protocol, std::string tag) {
     out.put(nlmsg.at(i));
   }
   out.close();
+}
+
+void DumpProto(const mlab::netlink::TCPDiagnosticsProto& proto) {
+  std::ofstream out;
+  out.open("protodata", std::ofstream::app | std::ofstream::binary);
+  proto.SerializeToOstream(&out);
+  out.close();
 
   // TODO(gfr) This should be optional.
-  auto* hdr = (const struct nlmsghdr*)nlmsg.c_str();
-  mlab::netlink::TCPInfoParser parser;
-  auto proto = parser.ParseNLMsg(hdr, mlab::netlink::Protocol(protocol));
   printf("%s\n", proto.ShortDebugString().c_str());
+}
+
+void DumpSummary(const mlab::netlink::TCPDiagnosticsProto& proto, std::string tag) {
   const google::protobuf::EnumDescriptor* enum_desc =
           mlab::netlink::TCPState_descriptor();
-
   fprintf(stderr, "%5d %s %s\n",
           proto.inet_diag_msg().sock_id().source().port(),
           tag.c_str(),
@@ -36,17 +46,33 @@ void output(const std::string& nlmsg, int protocol, std::string tag) {
                   ->options().GetExtension(mlab::netlink::name).c_str());
 }
 
-void output_hash(int protocol, const std::string& old_msg, const std::string& new_msg) {
+void output(const std::string& nlmsg, int protocol, std::string tag) {
+  DumpNlMsg(nlmsg);
+
+  auto proto = mlab::netlink::TCPInfoParser().ParseNLMsg(
+      nlmsg, mlab::netlink::Protocol(protocol));
+
+  DumpProto(proto);
+  DumpSummary(proto, tag);
+}
+
+// Output, using '#' as tag for summary.
+void on_close(int protocol, const std::string& old_msg,
+              const std::string& new_msg) {
   output(old_msg, protocol, "#");
 }
 
+// Output each new state we see, except for ESTABLISHED, which should only
+// be output when it is the old state.
+// PREREQ: old_msg and new_msg should have different TCPState values.
 void on_new_state(int protocol, const std::string& old_msg,
                   const std::string& new_msg) {
   // Always output old data when we see new state!
   if (!old_msg.empty()) {
     auto old_state = mlab::netlink::GetStateFromStr(old_msg);
 
-    // Output old state if it is ESTABLISHED.
+    // Output old state if it is ESTABLISHED, since it is NOT output as new
+    // state.
     if (old_state == mlab::netlink::TCPState::ESTABLISHED) {
       output(old_msg, protocol, "*");
     }
@@ -69,10 +95,9 @@ int main(int argc, char* argv[]) {
   auto start = steady_clock::now();
   auto one_minute = duration<int>(60);
 
-  // NOTE: This is rarely firing, because we almost always see some other
-  // state as the connection is closing.
-  g_poller_.OnClose(output_hash, {mlab::netlink::TCPState::ESTABLISHED});
-  // This is handling all the output.
+  // NOTE: This fires only occasionally, on very short lived connections.
+  // Usually, we see some other OnNewState before the connection closes.
+  g_poller_.OnClose(on_close, {mlab::netlink::TCPState::ESTABLISHED});
   g_poller_.OnNewState(on_new_state);
 
   int count = 0;
