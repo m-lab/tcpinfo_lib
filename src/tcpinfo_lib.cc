@@ -109,8 +109,9 @@ void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
 // <rta> Non-null pointer to message.
 // <proto> Non-null pointer to protobuf.
 void ParseBBRInfo(const struct rtattr* rta, BBRInfoProto* proto) {
-  const auto* bbr = (const struct tcp_bbr_info*)rta;
+  const auto* bbr = (const struct tcp_bbr_info*)RTA_DATA(rta);
   auto bw = (((unsigned long long)bbr->bbr_bw_hi) << 32) + bbr->bbr_bw_lo;
+  fprintf(stderr, "HI: %x\n", bbr->bbr_bw_hi);
   if (bw > 0) proto->set_bw(bw);
   if (bbr->bbr_min_rtt > 0) proto->set_min_rtt(bbr->bbr_min_rtt);
   if (bbr->bbr_pacing_gain > 0) proto->set_pacing_gain(bbr->bbr_pacing_gain);

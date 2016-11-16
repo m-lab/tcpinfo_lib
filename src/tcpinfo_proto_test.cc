@@ -20,7 +20,6 @@
 
 namespace mlab {
 namespace netlink {
-
 // These samples (raw{1,2,3,4}) are collected from stripped down ss.c
 // that also dumps the raw data.  Would be good to have more variability.
 
@@ -31,23 +30,29 @@ namespace netlink {
 //   ssthresh:18, send 25.0M,bps, lastsnd:239268, lastrcv:239268, lastack:13972,
 //   rcv_rtt:36, rcv_space:28800
 std::string raw1(
-    "\x10\x01\x00\x00\x14\x00\x02\x00\x40\xE2\x01\x00\xA8\x4B\x00\x00\x0A\x01"
-    "\x02\x00\x96\xE1\x01\xBB\x26\x20\x00\x00\x10\x03\x04\x13\xAC\x8F\x79\x71"
-    "\x39\x73\xB4\x8E\x26\x07\xF8\xB0\x40\x06\x08\x0D\x00\x00\x00\x00\x00\x00"
-    "\x20\x0E\x00\x00\x00\x00\x00\x1F\xF8\x35\x00\x88\xFF\xFF\x6C\x79\x00\x00"
-    "\x00\x00\x00\x00\x00\x00\x00\x00\x38\x42\x02\x00\xBA\x9F\x58\x05\x05\x00"
-    "\x08\x00\x00\x00\x00\x00\x14\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-    "\x00\x00\x00\x00\x00\x00\x00\x00\x24\x00\x07\x00\x00\x00\x00\x00\x80\xA2"
-    "\x05\x00\x00\x00\x00\x00\x00\x56\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-    "\x00\x00\x00\x00\x00\x00\x00\x00\x6C\x00\x02\x00\x01\x00\x00\x00\x00\x07"
-    "\x77\x00\x80\x2C\x03\x00\x40\x9C\x00\x00\x76\x05\x00\x00\x4A\x02\x00\x00"
-    "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-    "\x00\x00\xA4\xA6\x03\x00\x00\x00\x00\x00\xA4\xA6\x03\x00\x94\x36\x00\x00"
-    "\xDC\x05\x00\x00\xD8\x7D\x00\x00\x34\x21\x00\x00\xF8\x2A\x00\x00\x12\x00"
-    "\x00\x00\x13\x00\x00\x00\x94\x05\x00\x00\x03\x00\x00\x00\xA0\x8C\x00\x00"
-    "\x80\x70\x00\x00\x00\x00\x00\x00\x0A\x00\x04\x00\x63\x75\x62\x69\x63\x00"
-    "\x00\x00",
-    0x110);
+    "\x28\x01\x00\x00\x14\x00\x02\x00\x40\xE2\x01\x00\xA8\x4B\x00\x00"
+    "\x0A\x01\x02\x00\x96\xE1\x01\xBB\x26\x20\x00\x00\x10\x03\x04\x13"
+    "\xAC\x8F\x79\x71\x39\x73\xB4\x8E\x26\x07\xF8\xB0\x40\x06\x08\x0D"
+    "\x00\x00\x00\x00\x00\x00\x20\x0E\x00\x00\x00\x00\x00\x1F\xF8\x35"
+    "\x00\x88\xFF\xFF\x6C\x79\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    "\x38\x42\x02\x00\xBA\x9F\x58\x05\x05\x00\x08\x00\x00\x00\x00\x00"
+    "\x14\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    "\x00\x00\x00\x00\x24\x00\x07\x00\x00\x00\x00\x00\x80\xA2\x05\x00"
+    "\x00\x00\x00\x00\x00\x56\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    "\x00\x00\x00\x00\x00\x00\x00\x00\x6C\x00\x02\x00\x01\x00\x00\x00"
+    "\x00\x07\x77\x00\x80\x2C\x03\x00\x40\x9C\x00\x00\x76\x05\x00\x00"
+    "\x4A\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    "\x00\x00\x00\x00\x00\x00\x00\x00\xA4\xA6\x03\x00\x00\x00\x00\x00"
+    "\xA4\xA6\x03\x00\x94\x36\x00\x00\xDC\x05\x00\x00\xD8\x7D\x00\x00"
+    "\x34\x21\x00\x00\xF8\x2A\x00\x00\x12\x00\x00\x00\x13\x00\x00\x00"
+    "\x94\x05\x00\x00\x03\x00\x00\x00\xA0\x8C\x00\x00\x80\x70\x00\x00"
+    "\x00\x00\x00\x00\x0A\x00\x04\x00\x63\x75\x62\x69\x63\x00\x00\x00"
+    "\x18\x00\x10\x00"  // len 24, type 16
+    "\x12\x23\x34\x45\x01\x00\x00\x00"  // bw high and low
+    "\x9a\xab\x04\x00"  // min_rtt uSec
+    "\xde\xef\x01\x00"  // pacing gain << 8
+    "\x23\x34\x02\x00",  // cwnd gain << 8
+    0x128);
 
 //   0      0       2620:0:1003:413:ac8f:7971:3973:b48e:54550
 //   2607:f8b0:400d:c03::bd:https  timer:(keepalive 30sec 0), uid:148024,
@@ -416,7 +421,7 @@ TEST(Parser, IPToString) {
 
 TEST(Parser, LotsOfFields) {
   TCPInfoParser parser;
-  auto* hdr = (const struct nlmsghdr*)raw1.c_str();
+  auto* hdr = (const struct nlmsghdr*)raw1.data();
   auto proto = parser.ParseNLMsg(hdr, IPPROTO_TCP);
   ASSERT_EQ(proto.diag_protocol(), IPPROTO_TCP);
   EXPECT_TRUE(proto.has_inet_diag_msg());
@@ -449,39 +454,45 @@ TEST(Parser, LotsOfFields) {
   EXPECT_EQ(proto.socket_mem().rcvbuf(), 369280);
   EXPECT_EQ(proto.socket_mem().sndbuf(), 87552);
 
+  ASSERT_TRUE(proto.has_bbr_info());
+  EXPECT_EQ(proto.bbr_info().bw(), 5456012050ll);
+  EXPECT_EQ(proto.bbr_info().min_rtt(), 306074);
+  EXPECT_EQ(proto.bbr_info().pacing_gain(), 126942);
+  EXPECT_EQ(proto.bbr_info().cwnd_gain(), 144419);
+
   // Check proper parsing of endpoints.
   EXPECT_EQ(ToString(proto.inet_diag_msg().sock_id().source()),
             "[2620:0:1003:413:ac8f:7971:3973:b48e]:38625");
   // Don't really care if this changes, but useful to detect
   // when it does.
-  EXPECT_EQ(proto.ByteSize(), 185);
+  EXPECT_EQ(proto.ByteSize(), 205);
   fprintf(stderr, "%s\n", proto.DebugString().c_str());
   fprintf(stderr, "%d\n", proto.ByteSize());
 }
 
 TEST(Parser, MoreSamples) {
   TCPInfoParser parser;
-  auto* hdr = (const struct nlmsghdr*)raw2.c_str();
+  auto* hdr = (const struct nlmsghdr*)raw2.data();
   auto proto = parser.ParseNLMsg(hdr, IPPROTO_TCP);
   ASSERT_TRUE(proto.has_tcp_info());
   ASSERT_TRUE(proto.has_socket_mem());
 
   for (auto& msg : {raw3, raw4, raw5, raw6, raw7, raw8, raw9}) {
-    hdr = (const struct nlmsghdr*)msg.c_str();
+    hdr = (const struct nlmsghdr*)msg.data();
     proto = parser.ParseNLMsg(hdr, IPPROTO_TCP);
     ASSERT_TRUE(proto.has_tcp_info());
     ASSERT_TRUE(proto.has_socket_mem());
   }
 
   for (auto& msg : {raw10, raw11, raw12, raw13}) {
-    hdr = (const struct nlmsghdr*)msg.c_str();
+    hdr = (const struct nlmsghdr*)msg.data();
     proto = parser.ParseNLMsg(hdr, IPPROTO_TCP);
     ASSERT_TRUE(proto.has_tcp_info());
     ASSERT_TRUE(proto.has_socket_mem());
   }
 
   for (auto& msg : {raw13, raw14, raw15, raw16, raw17, raw18, raw19}) {
-    hdr = (const struct nlmsghdr*)msg.c_str();
+    hdr = (const struct nlmsghdr*)msg.data();
     proto = parser.ParseNLMsg(hdr, IPPROTO_TCP);
     ASSERT_TRUE(proto.has_tcp_info());
     ASSERT_TRUE(proto.has_socket_mem());
@@ -525,19 +536,19 @@ TEST(Poller, StashAndOnClose) {
   p.OnNewState(on_new_state);  // always call for new states.
 
   {
-    auto* nlh = (const struct nlmsghdr*)raw2.c_str();
+    auto* nlh = (const struct nlmsghdr*)raw2.data();
     auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
     p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
     Print(nlh);
   }
   {
-    auto* nlh = (const struct nlmsghdr*)raw8.c_str();
+    auto* nlh = (const struct nlmsghdr*)raw8.data();
     auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
     p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
     Print(nlh);
   }
   {
-    auto* nlh = (const struct nlmsghdr*)raw9.c_str();
+    auto* nlh = (const struct nlmsghdr*)raw9.data();
     auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
     p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
     Print(nlh);
@@ -551,7 +562,7 @@ TEST(Poller, StashAndOnClose) {
 
   // Try another round.  Same message should NOT trigger on_new_state.
   {
-    auto* nlh = (const struct nlmsghdr*)raw9.c_str();
+    auto* nlh = (const struct nlmsghdr*)raw9.data();
     auto* msg = reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh));
     p.Stash(msg->idiag_family, IPPROTO_TCP, msg->id, nlh);
     Print(nlh);
