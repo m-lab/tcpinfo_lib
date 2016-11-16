@@ -32,8 +32,8 @@ namespace netlink {
 
 namespace {
 // Extract a single 16 bit ipv6 field from byte array.
-// <ip> byte array
-// <n> offset
+// `ip` byte array
+// `n` offset
 unsigned int extract(const std::string& ip, int n) {
   return (((unsigned char)(ip[n])) << 8) + (unsigned char)ip[n + 1];
 }
@@ -48,8 +48,7 @@ TCPState GetState(struct inet_diag_msg* r) {
 }
 
 TCPState GetState(const struct nlmsghdr* nlh) {
-  // TODO(gfr) Use C++ style casts.
-  return GetState((struct inet_diag_msg*)NLMSG_DATA(nlh));
+  return GetState(reinterpret_cast<struct inet_diag_msg*>(NLMSG_DATA(nlh)));
 }
 
 InetDiagMsgProto::AddressFamily GetFamily(struct inet_diag_msg* r) {
@@ -63,8 +62,8 @@ InetDiagMsgProto::AddressFamily GetFamily(struct inet_diag_msg* r) {
 }
 
 // Parse primary inet_diag_msg into protobuf.
-// <r> Non-null pointer to message.
-// <proto> Non-null pointer to protobuf.
+// `r` Non-null pointer to message.
+// `proto` Non-null pointer to protobuf.
 void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
   proto->set_family(GetFamily(r));
   proto->set_state(GetState(r));
@@ -106,8 +105,8 @@ void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
 }
 
 // Parse rtattr message containing BBR info.
-// <rta> Non-null pointer to message.
-// <proto> Non-null pointer to protobuf.
+// `rta` Non-null pointer to message.
+// `proto` Non-null pointer to protobuf.
 void ParseBBRInfo(const struct rtattr* rta, BBRInfoProto* proto) {
   const auto* bbr = (const struct tcp_bbr_info*)RTA_DATA(rta);
   auto bw = (((unsigned long long)bbr->bbr_bw_hi) << 32) + bbr->bbr_bw_lo;
@@ -120,8 +119,8 @@ void ParseBBRInfo(const struct rtattr* rta, BBRInfoProto* proto) {
 #define TCPI_HAS_OPT(info, opt) !!(info->tcpi_options & (opt))
 
 // Parse rtattr message containing TCP info.
-// <rta> Non-null pointer to message.
-// <proto> Non-null pointer to protobuf.
+// `rta` Non-null pointer to message.
+// `proto` Non-null pointer to protobuf.
 void ParseTCPInfo(const struct rtattr* rta, TCPInfoProto* proto) {
   const struct tcp_info* info;
   unsigned len = RTA_PAYLOAD(rta);
@@ -203,8 +202,8 @@ void ParseTCPInfo(const struct rtattr* rta, TCPInfoProto* proto) {
 }
 
 // Parse rtattr message containing mem info.
-// <rta> Non-null pointer to message.
-// <proto> Non-null pointer to protobuf.
+// `rta` Non-null pointer to message.
+// `proto` Non-null pointer to protobuf.
 void ParseMemInfo(const struct rtattr* rta, SocketMemInfoProto* proto) {
   const auto* info = (const struct inet_diag_meminfo*)RTA_DATA(rta);
   proto->set_rmem_alloc(info->idiag_rmem);
@@ -214,8 +213,8 @@ void ParseMemInfo(const struct rtattr* rta, SocketMemInfoProto* proto) {
 }
 
 // Parse rtattr message containing SK mem info.
-// <rta> Non-null pointer to message.
-// <proto> Non-null pointer to protobuf.
+// `rta` Non-null pointer to message.
+// `proto` Non-null pointer to protobuf.
 void ParseSKMemInfo(const struct rtattr* rta, SocketMemInfoProto* proto) {
   const __u32* info = (__u32*)RTA_DATA(rta);
 #define SET_MEM_FIELD_IF_NONZERO(tag, field) \
@@ -352,7 +351,9 @@ void TCPInfoPoller::PollOnce() {
 void TCPInfoPoller::PollContinuously(uint polling_interval_msec) {}
 
 void TCPInfoPoller::Break() {}
-void TCPInfoPoller::ClearCache() {}
+int TCPInfoPoller::ClearCache() {
+  return tracker_.Clear();
+}
 void TCPInfoPoller::ClearFilters() {}
 bool TCPInfoPoller::ClearFilter(ConnectionFilter::Token token) { return false; }
 
