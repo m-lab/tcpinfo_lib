@@ -2,7 +2,6 @@
 # Check out, build, and install protobuf support.
 # Building from source as that is recommended in protobuf README.md file.
 
-set -x
 # check to see if protobuf tools already exist.
 LIBS=`/usr/bin/pkg-config --libs protobuf`
 if [ $? -ne 0 ] ; then

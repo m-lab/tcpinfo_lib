@@ -43,7 +43,7 @@ include_directories(${IPROUTE2_INCLUDE_DIRS})
 link_directories(${IPROUTE2_LIBS_DIR})
 
 ################### protobuf compiler ########################
-find_package(Threads REQUIRED)
+execute_process(COMMAND ${PROJECT_SOURCE_DIR}/install-protobuf.sh)
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
