@@ -92,7 +92,7 @@ add_test(tcpinfo_proto tcpinfo_proto_test)
 ################### connection_cache library  ########################
 add_library(connection_cache_lib
     ${SRC_DIR}/connection_cache.cc ${SRC_DIR}/connection_cache.h)
-target_link_libraries(connection_cache_lib Threads::Threads)
+target_link_libraries(connection_cache_lib pthread)
 
    #================= unit tests ======================
 add_executable(connection_cache_test
