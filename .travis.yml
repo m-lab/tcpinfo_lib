@@ -17,7 +17,7 @@ matrix:
       install:
         # Install coverage tools. (Used only for gcc build)
         - cd ${TRAVIS_BUILD_DIR}
-        - sudo apt-get -qq install lcov
+          #- sudo apt-get -qq install lcov
         - gem install coveralls-lcov
         - lcov --version
       env:
@@ -30,7 +30,7 @@ matrix:
         - lcov -r coverage.info '*_test.cc' '*.pb.h' '*.pb.cc' '*/iproute2/*' '/usr/include/*' '*/gtest/*' -o coverage.info
         - lcov --list coverage.info
         # Upload the coverage info to coveralls.
-        - coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info
+        - coveralls-lcov coverage.info
 
     # Build with clang and optimization.
     - compiler: clang
@@ -48,15 +48,6 @@ matrix:
 before_install:
 - clang --version
 - sudo apt-get update -qq
-
-install:
-# install GTest and GMock
-# TODO(gfr) See if there is a faster way to install these...
-- sudo apt-get -qq install libgtest-dev
-- "cd /usr/src/gtest && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
-- sudo apt-get -qq install google-mock
-- "cd /usr/src/gmock && sudo cmake . && sudo cmake --build . && sudo mv libg* /usr/local/lib/ ; cd -"
-- g++ --version
 
 before_cache:
 - cd ${TRAVIS_BUILD_DIR}

@@ -1,6 +1,4 @@
-# tcpinfo_lib
-[![Test Status](https://travis-ci.org/gfr10598/tcpinfo_lib.svg)](https://travis-ci.org/gfr10598/tcpinfo_lib)
-[![Coverage Status](https://coveralls.io/repos/github/gfr10598/tcpinfo_lib/badge.svg)](https://coveralls.io/github/gfr10598/tcpinfo_lib)
+# tcpinfo_lib [![Test Status](https://travis-ci.org/m-lab/tcpinfo_lib.svg)](https://travis-ci.org/m-lab/tcpinfo_lib) [![Coverage Status](https://coveralls.io/repos/github/m-lab/tcpinfo_lib/badge.svg)](https://coveralls.io/github/m-lab/tcpinfo_lib)
 
 Wrapper library for collecting data through netlink.
  
@@ -43,7 +41,6 @@ config is working, but will hopefully add clang config later.
     ├── connection_cache_test.cc
     ├── tcpinfo_lib.cc
     ├── tcpinfo_lib.h
-    ├── tcpinfo_lib_test.cc
     ├── tcpinfo.proto
     └── tcpinfo_proto_test.cc
 ```

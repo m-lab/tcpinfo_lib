@@ -25,22 +25,23 @@ extern "C" {
 namespace mlab {
 // Simple visitor that just counts the visited records.
 int visit_count = 0;
-void visitor(const ConnectionTracker::Record& record) { visit_count++; }
+void visitor(int protocol, const std::string& old_msg,
+             const std::string& new_msg) { visit_count++; }
 
 TEST(ConnectionTracker, Basic) {
   ConnectionTracker cache;
   std::string s1("string 1");
   std::string s2("string 2");
-  EXPECT_TRUE(cache.UpdateRecord(1, 99, &s1));
+  cache.UpdateRecord(1, 99, &s1);
   EXPECT_TRUE(s1.empty());
-  EXPECT_TRUE(cache.UpdateRecord(2, 99, &s2));
+  cache.UpdateRecord(2, 99, &s2);
   EXPECT_TRUE(s2.empty());
   cache.increment_round();
 
   // Now we update record 1, swapping its string value.
   // Visitor should then visit record 2.
   std::string swap("swap");
-  EXPECT_FALSE(cache.UpdateRecord(1, 99, &swap));
+  cache.UpdateRecord(1, 99, &swap);
   EXPECT_EQ(swap, "string 1");
   cache.VisitMissingRecords(visitor);
   EXPECT_EQ(visit_count, 1);
@@ -48,7 +49,7 @@ TEST(ConnectionTracker, Basic) {
 
   // Now we update record 1 again, swapping its string value.  Record 2 was
   // removed by visitor last time, so visitor should not change count.
-  EXPECT_FALSE(cache.UpdateRecord(1, 99, &swap));
+  cache.UpdateRecord(1, 99, &swap);
   EXPECT_EQ(swap, "swap");
   cache.VisitMissingRecords(visitor);
   EXPECT_EQ(visit_count, 1);
@@ -69,10 +70,10 @@ TEST(ConnectionTracker, UpdateFromNLMsg) {
     .nlmsg_len = 16, .nlmsg_type = 0, .nlmsg_flags = 0, .nlmsg_seq = 123,
     .nlmsg_pid = 0,
   };
-  EXPECT_TRUE(cache.UpdateFromNLMsg(AF_INET, IPPROTO_TCP, id, &hdr));
+  EXPECT_TRUE(cache.UpdateFromNLMsg(AF_INET, IPPROTO_TCP, id, &hdr).empty());
   id.idiag_sport = 4;
   id.idiag_dport = 5;
-  EXPECT_TRUE(cache.UpdateFromNLMsg(AF_INET, IPPROTO_TCP, id, &hdr));
+  EXPECT_TRUE(cache.UpdateFromNLMsg(AF_INET, IPPROTO_TCP, id, &hdr).empty());
   cache.increment_round();
   cache.VisitMissingRecords(visitor);
   EXPECT_EQ(visit_count, 2);

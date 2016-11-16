@@ -14,7 +14,6 @@
 
 #include "connection_cache.h"
 
-
 #include <fstream>
 #include <string>
 #include <unistd.h>
@@ -27,6 +26,8 @@ extern "C" {
 
 namespace mlab {
 
+// `data` is arbitrary (possibly binary) data to be cached under key.
+// It will typically by nlmsg data.
 bool ConnectionTracker::UpdateRecord(size_t key, int protocol,
                                      std::string* data) {
   const auto& it = connections_.find(key);
@@ -41,7 +42,12 @@ bool ConnectionTracker::UpdateRecord(size_t key, int protocol,
     // TODO(gfr) In addition to stashing the data, this should also parse
     // and compute various stats, e.g. min rtt.
     if (it->second.round == round_) {
-      fprintf(stderr, "!!!!Double update. %d %lu\n", round_, key);
+      // TODO(gfr) Replace with LOG_FIRST_N(ERROR, 20).
+      static int count = 20;
+      if (count > 0) {
+        fprintf(stderr, "!!!!Double update. %d %lu\n", round_, key);
+        count--;
+      }
     }
     it->second.round = round_;
     it->second.protocol = protocol;  // Should we compare against previous?
@@ -50,13 +56,12 @@ bool ConnectionTracker::UpdateRecord(size_t key, int protocol,
   }
 }
 
-// Iterate through the map, find any items that are from previous
-// round, and take action on them.
 void ConnectionTracker::VisitMissingRecords(
-    void (*visitor)(const Record& record)) {
+    std::function<void(int protocol, const std::string& old_msg,
+                       const std::string& new_msg)> visitor) {
   for (auto it = connections_.begin(); it != connections_.end();) {
     if (it->second.round != round_) {
-      visitor(it->second);
+      if (visitor) visitor(it->second.protocol, it->second.msg, std::string());
       it = connections_.erase(it);
     } else {
       ++it;
@@ -99,13 +104,17 @@ size_t HashConnection(const struct inet_diag_sockid id, int family) {
 }
 }  // anonymous namespace
 
-bool ConnectionTracker::UpdateFromNLMsg(int family, int protocol,
-                                        const struct inet_diag_sockid id,
-                                        const struct nlmsghdr* nlh) {
+std::string ConnectionTracker::UpdateFromNLMsg(
+    int family, int protocol, const struct inet_diag_sockid id,
+    const struct nlmsghdr* nlh) {
   size_t key = HashConnection(id, family);
-  if (key == 0) return false;
+  if (key == 0) return "Ignoring local";
+
+  // Creates a new byte string, copying the contents of nlh.
   std::string data(reinterpret_cast<const char*>(nlh), nlh->nlmsg_len);
-  return UpdateRecord(key, protocol, &data);
+  // This swaps the string value.
+  UpdateRecord(key, protocol, &data);
+  return data;
 }
 
 }  // namespace mlab

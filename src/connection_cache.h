@@ -13,10 +13,15 @@
 // limitations under the License.
 
 /*****************************************************************************
-* class ConnectionTracker
+* This module defines:
+*   class ConnectionTracker
 ******************************************************************************/
 
+#ifndef MLAB_CONNECTION_CACHE_H
+#define MLAB_CONNECTION_CACHE_H
+
 #include <unordered_map>
+#include <functional>
 
 extern "C" {
 #include <linux/inet_diag.h>
@@ -34,26 +39,37 @@ namespace mlab {
 class ConnectionTracker {
  public:
   struct Record {
-    int round;
+    int round;  // Used to track which records have been updated.
     int protocol;
-    std::string msg;
+    std::string msg;  // String containing (possibly binary) cached data.
   };
 
   using ConnectionMap = std::unordered_map<size_t, Record>;
 
   // Locate connection record, update round, and swap its data.
   // Returns true if this is a new connection.
+  // `data` is arbitrary (possibly binary) data to be cached under key.
+  // It will typically by nlmsg data.
   bool UpdateRecord(size_t key, int protocol, std::string* data);
 
-  // Starting from nlhmsg, and sockid, compute hash, and UpdateRecord.
-  // Returns true if this is a new connection.
-  bool UpdateFromNLMsg(int family, int protocol,
-                       const struct ::inet_diag_sockid id,
-                       const struct ::nlmsghdr* nlh);
+  // Compute key from socket <id>, and call UpdateRecord on non-local
+  // connections.
+  // Return previous record message contents, which will be empty if this
+  // is a new connection, or "Ignoring local" if this is a local connection.
+  std::string UpdateFromNLMsg(int family, int protocol,
+                              const struct ::inet_diag_sockid id,
+                              const struct ::nlmsghdr* nlh);
 
-  // Visit all records that were not updated on this round.
-  void VisitMissingRecords(void (*visitor)(const Record& record));
+  // Iterate through the map, identifying all items that were not updated on
+  // the previous round.  Execute provided function on such items, and remove
+  // them from the cache.  Note: `new_msg` function arg will be empty, and is
+  // only included for consistency with other visitor types.
+  void VisitMissingRecords(
+      std::function<void(int protocol, const std::string& old_msg,
+                         const std::string& new_msg)> visitor);
 
+  // Increment the round number, which is used to determine records that have
+  // not been updated in the last round.
   void increment_round() { ++round_; }  // Don't care about wrapping.
   size_t size() const { return connections_.size(); }
 
@@ -61,6 +77,6 @@ class ConnectionTracker {
   ConnectionMap connections_;
   int round_ = 1;
 };
-
-extern ConnectionTracker g_tracker;
 }  // namespace mlab
+
+#endif // MLAB_CONNECTION_CACHE_H
