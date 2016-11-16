@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(gfr) The include order matters.  If tcpinfo_lib.h is included later,
-// we get obscure compiler errors processing tcpinfo.pb.h.
-#include "tcpinfo_lib.h"
-
 #include <string>
 
 #include "gtest/gtest.h"
 #include "connection_cache.h"
+// TODO(gfr) The include order matters.  If tcpinfo_lib.h is included later,
+// we get obscure compiler errors processing tcpinfo.pb.h.
+#include "tcpinfo_lib.h"
 
 extern "C" {
 #include <netinet/in.h>  // IPPROTO_TCP
