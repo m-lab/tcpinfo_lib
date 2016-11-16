@@ -36,7 +36,7 @@ extern mlab::netlink::TCPInfoPoller g_poller_;
 //   sack, cubic, wscale:7/7, rto:208, rtt:8.5/11, ato:40, mss:1398, cwnd:19,
 //   ssthresh:18, send 25.0M,bps, lastsnd:239268, lastrcv:239268, lastack:13972,
 //   rcv_rtt:36, rcv_space:28800
-std::string raw1(
+std::string msg1(
     "\x10\x01\x00\x00\x14\x00\x02\x00\x40\xE2\x01\x00\xA8\x4B\x00\x00\x0A\x01"
     "\x02\x00\x96\xE1\x01\xBB\x26\x20\x00\x00\x10\x03\x04\x13\xAC\x8F\x79\x71"
     "\x39\x73\xB4\x8E\x26\x07\xF8\xB0\x40\x06\x08\x0D\x00\x00\x00\x00\x00\x00"
@@ -62,38 +62,36 @@ bool saw_msg1 = false;
 
 void visitor(int protocol, const std::string& old_msg,
              const std::string& new_msg) {
-  saw_msg1 |= (old_msg == raw1);
+  saw_msg1 |= (old_msg == msg1);
   visit_count++;
 }
 
 namespace netlink {
 
-// When running without ESTABLISHED state, this generally produces
-// no results, so it is useless.
-TEST(TCPInfoLib, DISABLED_Basic) {
-  visit_count = 0;
-  TCPInfoPoller poller;
-  poller.PollOnce();  // This should populate the poller's tracker object.
-
-  // Not quite intended use, but useful testing hack.
-  g_poller_.GetTracker()->VisitMissingRecords(visitor);
-  g_poller_.GetTracker()->increment_round();
-
-  // CAUTION: This may be flaky since it depends on number of
-  // TCP connections on the machine.
-  EXPECT_GT(visit_count, 2);
+TEST(TCPInfoLib, Basic) {
+  g_poller_.ClearCache();
+  g_poller_.PollOnce();  // This should populate the poller's tracker object.
+  // Most machines will have at least a few non-local connections.
+  EXPECT_GT(g_poller_.ClearCache(), 2);
 }
 
 TEST(TCPInfoLib, CAdapters) {
+  g_poller_.ClearCache();
   visit_count = 0;
-  auto* hdr = (struct nlmsghdr*)raw1.c_str();
+  auto* hdr = (struct nlmsghdr*)msg1.data();
   struct inet_diag_arg diag_arg = {
     .protocol = IPPROTO_TCP,
   };
 
+  g_poller_.GetTracker()->VisitMissingRecords(visitor);
+  ASSERT_EQ(visit_count, 0);
+
   update_record(nullptr, hdr, (void *)&diag_arg);
-  g_poller_.GetTracker()->increment_round();
+
   // Not quite intended use, but useful testing hack.
+  // Increment the round, so all records are out of date.
+  // Then visit missing (all) records.
+  g_poller_.GetTracker()->increment_round();
   g_poller_.GetTracker()->VisitMissingRecords(visitor);
   EXPECT_EQ(visit_count, 1);
 }
@@ -111,23 +109,27 @@ TEST(TCPInfoLib, ToString) {
 }
 
 TEST(TCPInfoLib, OnClose) {
+  g_poller_.ClearCache();
   visit_count = 0;
   saw_msg1 = false;
 
   // Insert some artificial items into the cache.
-  auto* hdr = (struct nlmsghdr*)raw1.c_str();
+  auto* hdr = (struct nlmsghdr*)msg1.data();
   struct inet_diag_arg diag_arg = {
     .protocol = IPPROTO_TCP,
   };
   update_record(nullptr, hdr, (void *)&diag_arg);
-  g_poller_.GetTracker()->increment_round();
 
   // Now set up the poller, and configure to run visitor on close.
   g_poller_.OnClose(visitor);
+  g_poller_.GetTracker()->increment_round();
 
   // When we run PollOnce, it should iterate over cache entries, and call
   // visitor for each old item that isn't updated.  The visitor should see
   // raw, so saw_msg1 should be true.
+  // UNFORTUNATELY, it will also poll the tcpinfo from the network stack, so
+  // IF there is an open connection with the same key, it could mask our
+  // artificial connection.
   g_poller_.PollOnce();
   EXPECT_EQ(visit_count, 1);
   EXPECT_TRUE(saw_msg1);

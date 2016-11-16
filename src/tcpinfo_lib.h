@@ -56,14 +56,21 @@ TCPState GetStateFromStr(const std::string& data);
 *****************************************************************************/
 class TCPInfoParser {
  public:
-  // <msg> ownership NOT transfered.
-  // <protocol> fallback if it is not specified in msg.
+  // `msg` ownership NOT transfered.
+  // `protocol` fallback if it is not specified in msg.
   TCPDiagnosticsProto ParseNLMsg(const struct nlmsghdr* msg,
                                  Protocol protocol) const;
 
-  // <msg> ownership NOT transfered.
-  // <protocol> fallback if it is not specified in msg.
-  // <proto> output protobuf into which msg will be parsed.
+  // `protocol` fallback if it is not specified in msg.
+  TCPDiagnosticsProto ParseNLMsg(const std::string& msg,
+                                 Protocol protocol) const {
+    auto* hdr = (const struct nlmsghdr*)msg.c_str();
+    return ParseNLMsg(hdr, mlab::netlink::Protocol(protocol));
+  }
+
+  // `msg` ownership NOT transfered.
+  // `protocol` fallback if it is not specified in msg.
+  // `proto` output protobuf into which msg will be parsed.
   void NLMsgToProto(const struct nlmsghdr* msg, Protocol protocol,
                     TCPDiagnosticsProto* proto) const;
 };
@@ -116,7 +123,8 @@ class TCPInfoPoller {
   void Break();
 
   // Clear the connection cache.
-  void ClearCache();
+  // Returns the number of records in the cache.
+  int ClearCache();
 
   // Remove all connection filters.
   void ClearFilters();
@@ -146,7 +154,7 @@ class TCPInfoPoller {
 
   // Specify handlers that will be run on any events that do not match any of
   // the tuple filters.
-  // <states> is a list of states that should be reported.  If empty, all
+  // `states` is a list of states that should be reported.  If empty, all
   //          states will be reported.
   void OnClose(Handler handler, const std::vector<TCPState>& states = {});
   void OnNewState(Handler handler, const std::vector<TCPState>& states = {});
@@ -158,7 +166,7 @@ class TCPInfoPoller {
              const struct nlmsghdr* nlh);
 
  private:
-  FRIEND_TEST(TCPInfoLib, DISABLED_Basic);
+  FRIEND_TEST(TCPInfoLib, Basic);
   FRIEND_TEST(TCPInfoLib, CAdapters);
   FRIEND_TEST(TCPInfoLib, OnClose);
   FRIEND_TEST(Poller, StashAndOnClose);
