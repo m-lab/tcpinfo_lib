@@ -35,6 +35,8 @@ namespace mlab {
 * connections.  It is intended to be used to cache tcpinfo and related data,
 * allow it to be updated (swapping the new for old data for a connection),
 * and iterate with a visitor over any stale connections.
+*
+* Thread compatible.
 ****************************************************************************/
 class ConnectionTracker {
  public:
@@ -67,6 +69,12 @@ class ConnectionTracker {
   void VisitMissingRecords(
       std::function<void(int protocol, const std::string& old_msg,
                          const std::string& new_msg)> visitor);
+
+  int Clear() {
+    int count = size();
+    connections_.clear();
+    return count;
+  }
 
   // Increment the round number, which is used to determine records that have
   // not been updated in the last round.
