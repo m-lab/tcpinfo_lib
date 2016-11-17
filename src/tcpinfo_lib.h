@@ -166,6 +166,9 @@ class TCPInfoPoller {
              const struct nlmsghdr* nlh);
 
  private:
+  FRIEND_TEST(TCPInfoLib, Basic);
+  FRIEND_TEST(TCPInfoLib, CAdapters);
+  FRIEND_TEST(TCPInfoLib, OnClose);
   FRIEND_TEST(Poller, StashAndOnClose);
 
   // For testing purposes.
