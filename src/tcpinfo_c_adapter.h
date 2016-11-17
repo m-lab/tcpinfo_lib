@@ -13,14 +13,14 @@
 // limitations under the License.
 
 /****************************************************************************
-* This file contains declarations that are used by both .c files and .cc
-* files.  When included in .cc files, it must be enclosed in an extern "C"
-* block.
+*  This file contains declarations that are used by both .c files and .cc
+*  files.  When included in .cc files, it must be enclosed in an extern "C"
+*  block.
 *
-* fetch_tcpinfo(...) is implemented in the tcpinfo_c_adapter.c for easy
-* access to all the C libraries.
-* update_record(...) is implemented in tcpinfo_lib.cc, because it requires
-* access to C++ functions.
+*  fetch_tcpinfo(...) is implemented in the tcpinfo_c_adapter.c for easy
+*  access to C libraries.
+*  update_record(...) is implemented in tcpinfo_lib.cc, because it requires
+*  access to C++ functions.
 ****************************************************************************/
 
 #ifndef TCPINFO_C_ADAPTER_H_

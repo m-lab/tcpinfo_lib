@@ -11,9 +11,13 @@ sudo apt-get install build-essential autoconf automake make cmake
 sudo apt-get install clang g++ libtool curl unzip bison flex
 ```
 
+## clang
+The build is configured to use clang.  If you want to use a different compiler,
+export CXX_COMPILER and C_COMPILER.
+
 # Building
 ```
-git clone git@github.com:gfr10598/tcpinfo_lib
+git clone git@github.com:mlab/tcpinfo_lib
 cd tcpinfo_lib
 mkdir build
 cd build
@@ -27,36 +31,23 @@ contains all config, code, object files, libraries, and binaries.
 config that also produces coverage data for coveralls, and a clang config that
 builds optimized code.
 
-# Prerequisites
-## General
-General requirements for building this repository
-```
-sudo apt-get install autoconf automake libtool curl make g++ unzip
-```
-## clang
-The build is configured to use clang.  If you don't have it installed, you
-can try commenting out the two lines near the top of the CMakeLists.txt file.
-
 ## protobuf compiler
 CMake apparently uses pkg-config to discover the protobuf compiler.  But it
 appears that when installed with apt-get install protobuf-compiler, (at least
 on gobuntu) the pkg-config .pc file is not installed.
-So, to make everything work smoothly, run from the main directory:
-```
-install-protobuf.sh
-```
+So, to make everything work smoothly, cmake .. will run install-protobuf.sh,
+which will install it from github if pkg-config doesn't have a suitable config.
+
 This requires sudo privileges, and you may be prompted for your password for
 the install and ldconfig steps.
-
-FYI, if you already have a protobuf compiler visible to the pkg-config tools,
-this script will do nothing.
 
 If you later want to revert your system, you will need to cd to the protobuf
 directory, and:
 ```
 sudo make uninstall
 ```
-You will like then also need to:
+To restore the original protobuf-compiler (if you had one), you may also need
+to:
 ```
 sudo apt-get uninstall protobuf-compiler
 sudo apt-get install protobuf-compiler
@@ -67,7 +58,6 @@ The ext/iproute2 and ext/gtest directories provide rules for downloading
 and building the dependencies.  They are incorporated with add_subdirectory
 and should be downloaded and built when needed.  They should show up under
 build/ext/...
-
 
 # Source tree
 ```

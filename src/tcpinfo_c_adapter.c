@@ -1,21 +1,20 @@
-/*
- * This file contains code that calls C functions defined in the netlink
- * and related libraries, and iproute2 code.  It is challenging to
- * implement in C++ because of linkage issues.
- *
- * Derived from iproute2 ss.c.  Forked from net-next in Sept 2016.
- * Much of the content has been left close in form to the original
- * to make it clearer what the relationships are with the ss.c code.
- * Most of the ss.c code is not needed, and therefore stripped out.
- *
- *    This program is free software; you can redistribute it and/or
- *    modify it under the terms of the GNU General Public License
- *    as published by the Free Software Foundation; either version
- *    2 of the License, or (at your option) any later version.
- *
- * Original ss.c Author: Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
- */
-
+// Copyright 2016 measurement-lab
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// This code is loosely modeled on misc/ss.c code from the iproute2
+// library by Alexey Kuznetsov, circa September 2016.
+//
 #include "tcpinfo_c_adapter.h"
 
 #include <arpa/inet.h>
@@ -68,18 +67,16 @@ static int sockdiag_send(int family, int fd, int protocol) {
   memset(&req.r, 0, sizeof(req.r));
   req.r.sdiag_family = family;
   req.r.sdiag_protocol = protocol;
+
+  // With these additional flags, the last state we see is usually LAST_ACK,
+  // TIME_WAIT, or one of the FIN_WAIT states.  The LAST_ACK and FIN_WAIT1
+  // states have full information, but FIN_WAIT2 and TIME_WAIT have only the
+  // inet_diag_msg.
+  // Since we don't ALWAYS see a final state when a connection ends, we request
+  // and monitor ESTABLISHED records to avoid missing connections (though we may
+  // still miss some).  Including ESTABLISHED drops the polling rate from about
+  // 1600/sec to about 1000/sec on a modern 3 GHz machine.
   req.r.idiag_states = 1 << SS_ESTABLISHED;
-  // DO NOT SUBMIT
-//  req.r.idiag_states = 0;
-  /****************************************************************
-  * With these additional flags, we occasionally last state we see
-  * is usually LAST_ACK or TIME_WAIT, and occasionally we see one of
-  * the FIN_WAIT states.  The LAST_ACK and FIN_WAIT1 states have full
-  * information, but FIN_WAIT2 and TIME_WAIT have only the inet_diag_msg.
-  *
-  * Incidentally, dropping ESTABLISHED only raises the polling rate
-  * from about 1000/sec to about 1600/sec.
-  *****************************************************************/
   req.r.idiag_states |= 1 << SS_SYN_SENT;
   req.r.idiag_states |= 1 << SS_SYN_RECV;
   req.r.idiag_states |= 1 << SS_CLOSE_WAIT;
@@ -88,7 +85,7 @@ static int sockdiag_send(int family, int fd, int protocol) {
   req.r.idiag_states |= 1 << SS_LAST_ACK;
   req.r.idiag_states |= 1 << SS_FIN_WAIT1;
   req.r.idiag_states |= 1 << SS_FIN_WAIT2;
-//  req.r.idiag_states |= 1 << SS_TIME_WAIT;
+  req.r.idiag_states |= 1 << SS_TIME_WAIT;
 
   // show_mem
   req.r.idiag_ext |= (1 << (INET_DIAG_MEMINFO - 1));
@@ -96,7 +93,11 @@ static int sockdiag_send(int family, int fd, int protocol) {
 
   // show_tcpinfo
   req.r.idiag_ext |= (1 << (INET_DIAG_INFO - 1));
+
+  // congestion info
   req.r.idiag_ext |= (1 << (INET_DIAG_VEGASINFO - 1));
+  req.r.idiag_ext |= (1 << (INET_DIAG_DCTCPINFO - 1));
+  req.r.idiag_ext |= (1 << (INET_DIAG_BBRINFO - 1));
   req.r.idiag_ext |= (1 << (INET_DIAG_CONG - 1));
 
   iov[0] = (struct iovec){.iov_base = &req, .iov_len = sizeof(req)};
