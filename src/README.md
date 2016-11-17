@@ -1,17 +1,16 @@
 # Components
 ## tcpinfo.proto
-... contains the data structures for all tcp_info and netlink related code.
+Data structures for all tcp_info and netlink related code.
 
 ## tcpinfo_lib
-... contains the primary interface for interacting with the
+Utility library providing high level api to netlink services.
 
 ## connection_cache
-... keeps a cache of data for each connection seen so far.
+Component for caching data for each active (non-local) connection.
 
 ## tcpinfo_c_adapter
-... contains the low level code that makes calls to the netlink library and
-iproute2 code.
+Low level code that makes calls to the netlink library and iproute2 code.
 
 ## main.cc
-... contains a simple demo polling program.
+Simple demo polling program illustrating use of the tcpinfo_lib library.
 

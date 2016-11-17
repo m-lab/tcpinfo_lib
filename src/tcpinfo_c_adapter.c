@@ -42,7 +42,11 @@ enum {
   SS_MAX
 };
 
-#define MAGIC_SEQ 123456
+// Magic number used for nlmsg_seq.  Doesn't really matter since we are
+// running synchronously (???).
+// TODO(gfr) For thoroughness, should this be a sequence instead of a constant?
+// iproute2 ss.c just uses a constant.
+#define MAGIC_SEQ 0x3A41B852
 
 // family is expected to be PF_INET or PF_INET6
 // protocol expected to be IPPROTO_TCP

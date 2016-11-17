@@ -46,7 +46,7 @@ void DumpSummary(const mlab::netlink::TCPDiagnosticsProto& proto, std::string ta
                   ->options().GetExtension(mlab::netlink::name).c_str());
 }
 
-void output(const std::string& nlmsg, int protocol, std::string tag) {
+void Output(const std::string& nlmsg, int protocol, std::string tag) {
   DumpNlMsg(nlmsg);
 
   auto proto = mlab::netlink::TCPInfoParser().ParseNLMsg(
@@ -59,7 +59,7 @@ void output(const std::string& nlmsg, int protocol, std::string tag) {
 // Output, using '#' as tag for summary.
 void on_close(int protocol, const std::string& old_msg,
               const std::string& new_msg) {
-  output(old_msg, protocol, "#");
+  Output(old_msg, protocol, "#");
 }
 
 // Output each new state we see, except for ESTABLISHED, which should only
@@ -67,21 +67,19 @@ void on_close(int protocol, const std::string& old_msg,
 // PREREQ: old_msg and new_msg should have different TCPState values.
 void on_new_state(int protocol, const std::string& old_msg,
                   const std::string& new_msg) {
-  // Always output old data when we see new state!
+  // Output old data when it's state is ESTABLISHED.
   if (!old_msg.empty()) {
     auto old_state = mlab::netlink::GetStateFromStr(old_msg);
 
-    // Output old state if it is ESTABLISHED, since it is NOT output as new
-    // state.
     if (old_state == mlab::netlink::TCPState::ESTABLISHED) {
-      output(old_msg, protocol, "*");
+      Output(old_msg, protocol, "*");
     }
   }
 
   // For all states EXCEPT ESTABLISHED, output the state immediately.
   if (mlab::netlink::GetStateFromStr(new_msg)
       != mlab::netlink::TCPState::ESTABLISHED) {
-    output(new_msg, protocol, " ");
+    Output(new_msg, protocol, " ");
   }
 }
 } // anonymous namespace

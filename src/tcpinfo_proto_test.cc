@@ -529,16 +529,16 @@ void Print(const struct nlmsghdr* nlh) {
 }
 }  // anonymous namespace
 
+namespace test {
 using namespace std::placeholders;
-
-#define POLL_WITHOUT_FETCH(poller) \
-  poller.GetTracker()->VisitMissingRecords( \
-      std::bind(&TCPInfoPoller::on_close_wrapper, &poller, _1, _2, _3)); \
-  poller.GetTracker()->increment_round(); \
+void VisitAndIncrement(TCPInfoPoller* poller) {
+  poller->GetTracker()->VisitMissingRecords(
+      std::bind(&TCPInfoPoller::on_close_wrapper, poller, _1, _2, _3));
+  poller->GetTracker()->increment_round();
+}
+}  // namespace test
 
 TEST(Poller, StashAndOnClose) {
-// Stash and onclose in another file.
-
   TCPInfoPoller p;
   p.OnClose(on_close, {mlab::netlink::TCPState::ESTABLISHED});
   p.OnNewState(on_new_state);  // always call for new states.
@@ -564,8 +564,8 @@ TEST(Poller, StashAndOnClose) {
   // All three of these are new states.
   EXPECT_EQ(on_new_state_count, 3);
 
-  // Just visits missing rounds, and increment round;
-  POLL_WITHOUT_FETCH(p);
+  // Visit stale records, and increment round;
+  test::VisitAndIncrement(&p);
   EXPECT_EQ(on_close_count, 0);
 
   // Try another round.  Same message should NOT trigger on_new_state.
@@ -577,9 +577,9 @@ TEST(Poller, StashAndOnClose) {
   }
   EXPECT_EQ(on_new_state_count, 3);
 
-  // Just visits missing rounds, and increment round;
+  // Visit stale records, and increment round;
   // This one should cause the on_close_ to be invoked for two messages.
-  POLL_WITHOUT_FETCH(p);
+  test::VisitAndIncrement(&p);
   // We put in one ESTABLISHED, and one OTHER.  We should only see ESTABLISHED.
   EXPECT_EQ(on_close_count, 1);
   EXPECT_FALSE(new_msg_not_empty);  // OnClose should always have empty messages.
