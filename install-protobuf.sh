@@ -4,7 +4,8 @@
 
 # check to see if protobuf tools already exist.
 LIBS=`/usr/bin/pkg-config --libs protobuf`
-if [ $? -ne 0 ] ; then
+PB_VER=`protoc --version`
+if [[ ($? -ne 0) ||  ("${PB_VER}" < "libprotoc 3.1.0") || (-z "${LIBS}")]]; then
   if [ -r protobuf/configure ] ; then
     echo "Using cached protobuf."
     cd protobuf
