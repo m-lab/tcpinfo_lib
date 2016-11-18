@@ -36,6 +36,12 @@ extern "C" {
 namespace mlab {
 namespace netlink {
 
+extern "C"
+// rtnl_filter_t function to handle each result, passed into fetch_tcpinfo()
+// function.
+int update_record(const struct sockaddr_nl *addr,
+                  struct nlmsghdr *nlh, void *arg);
+
 class TCPInfoPoller;
 namespace test {
 // Test support function that required friend status.

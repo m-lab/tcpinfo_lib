@@ -403,7 +403,7 @@ std::string raw19(
 
 TEST(Parser, IPToString) {
   InetDiagMsgProto p4;
-  p4.set_family(InetDiagMsgProto_AddressFamily_AF_INET);
+  p4.set_family(InetDiagMsgProto_AddressFamily_INET);
   auto* sock_id = p4.mutable_sock_id();
   auto* src = sock_id->mutable_source();
   src->set_port(1234);
@@ -411,7 +411,7 @@ TEST(Parser, IPToString) {
   EXPECT_EQ(ToString(p4.sock_id().source()), "97.98.99.100:1234");
 
   InetDiagMsgProto p6;
-  p6.set_family(InetDiagMsgProto_AddressFamily_AF_INET6);
+  p6.set_family(InetDiagMsgProto_AddressFamily_INET6);
   auto* sock_id6 = p6.mutable_sock_id();
   auto* src6 = sock_id6->mutable_source();
   src6->set_port(5678);

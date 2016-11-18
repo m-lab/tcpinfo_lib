@@ -18,6 +18,7 @@
 #include <string>
 
 #include "connection_cache.h"  // For ConnectionTracker
+#include "tcpinfo_c_adapter.h"  // For update_record, inet_diag_arg
 
 extern "C" {
 #include <arpa/inet.h>
@@ -25,7 +26,6 @@ extern "C" {
 #include <linux/tcp.h>
 
 #include "libnetlink.h"
-#include "tcpinfo_c_adapter.h"  // declaration of update_record.
 }
 
 namespace mlab {
@@ -56,7 +56,7 @@ InetDiagMsgProto::AddressFamily GetFamily(struct inet_diag_msg* r) {
   auto family = r->idiag_family;
   if (!InetDiagMsgProto_AddressFamily_IsValid(family)) {
     fprintf(stderr, "Invalid family: %d\n", family);
-    return InetDiagMsgProto_AddressFamily_AF_UNSPEC;
+    return InetDiagMsgProto_AddressFamily_UNSPEC;
   } else {
     return InetDiagMsgProto::AddressFamily(family);
   }
@@ -81,15 +81,15 @@ void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
   dest->set_port(ntohs(r->id.idiag_dport));
 
   switch (proto->family()) {
-  case InetDiagMsgProto_AddressFamily_AF_INET:
+  case InetDiagMsgProto_AddressFamily_INET:
     src->set_ip(r->id.idiag_src, 4);
     dest->set_ip(r->id.idiag_dst, 4);
     break;
-  case InetDiagMsgProto_AddressFamily_AF_INET6:
+  case InetDiagMsgProto_AddressFamily_INET6:
     src->set_ip(r->id.idiag_src, 16);
     dest->set_ip(r->id.idiag_dst, 16);
     break;
-  case InetDiagMsgProto_AddressFamily_AF_UNSPEC:
+  case InetDiagMsgProto_AddressFamily_UNSPEC:
     // We don't know how to interpret the addresses, so leave them unset.
     // TODO(gfr) Log a warning here.
     break;

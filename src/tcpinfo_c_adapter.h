@@ -1,3 +1,6 @@
+#ifndef TCPINFO_C_ADAPTER_H_
+#define TCPINFO_C_ADAPTER_H_
+
 // Copyright 2016 measurement-lab
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,24 +16,14 @@
 // limitations under the License.
 
 /****************************************************************************
-*  This file contains declarations that are used by both .c files and .cc
-*  files.  When included in .cc files, it must be enclosed in an extern "C"
-*  block.
-*
-*  fetch_tcpinfo(...) is implemented in the tcpinfo_c_adapter.c for easy
-*  access to C libraries.
-*  update_record(...) is implemented in tcpinfo_lib.cc, because it requires
-*  access to C++ functions.
+*  fetch_tcpinfo() is called from C++, but implemented in C to provide clear
+*  linkage to C library functions.
 ****************************************************************************/
 
-#ifndef TCPINFO_C_ADAPTER_H_
-#define TCPINFO_C_ADAPTER_H_
-
-#include <linux/inet_diag.h>
-#include <linux/netlink.h>
-#include <sys/socket.h>
-
-#include "libnetlink.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "libnetlink.h"  // For rtnl_filter_t
 
 struct inet_diag_arg {
   int protocol;
@@ -40,9 +33,7 @@ struct inet_diag_arg {
 // `callback` has rtnl_filter_t signature, and is passed to rtnl_dump_filter.
 int fetch_tcpinfo(rtnl_filter_t callback);
 
-// rtnl_filter_t function to handle each result, passed into fetch_tcpinfo()
-// function. Implementation in tcpinfo_lib.cc
-int update_record(const struct sockaddr_nl *addr,
-                  struct nlmsghdr *nlh, void *arg);
-
+#ifdef __cplusplus
+}
+#endif
 #endif  // TCPINFO_C_ADAPTER_H_

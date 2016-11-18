@@ -18,6 +18,7 @@
 #include "tcpinfo_c_adapter.h"
 
 #include <arpa/inet.h>
+#include <linux/inet_diag.h>  // for INET_DIAG_...
 #include <linux/sock_diag.h>
 #include <unistd.h>
 

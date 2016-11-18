@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "tcpinfo_lib.h"
+
 #include <string>
 
 #include "gtest/gtest.h"
-#include "connection_cache.h"
-// TODO(gfr) The include order matters.  If tcpinfo_lib.h is included later,
-// we get obscure compiler errors processing tcpinfo.pb.h.
-#include "tcpinfo_lib.h"
-
-extern "C" {
-#include <netinet/in.h>  // IPPROTO_TCP
-#include <sys/socket.h>  // AF_INET*
-
 #include "tcpinfo_c_adapter.h"
-}
 
 extern mlab::netlink::TCPInfoPoller g_poller_;
 
