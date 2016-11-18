@@ -18,6 +18,7 @@
 #include <string>
 
 #include "connection_cache.h"  // For ConnectionTracker
+#include "tcpinfo_c_adapter.h"  // For update_record, inet_diag_arg
 
 extern "C" {
 #include <arpa/inet.h>
@@ -55,7 +56,7 @@ InetDiagMsgProto::AddressFamily GetFamily(struct inet_diag_msg* r) {
   auto family = r->idiag_family;
   if (!InetDiagMsgProto_AddressFamily_IsValid(family)) {
     fprintf(stderr, "Invalid family: %d\n", family);
-    return InetDiagMsgProto_AddressFamily_AF_UNSPEC;
+    return InetDiagMsgProto_AddressFamily_UNSPEC;
   } else {
     return InetDiagMsgProto::AddressFamily(family);
   }
@@ -80,15 +81,15 @@ void ParseInetDiagMsg(struct inet_diag_msg* r, InetDiagMsgProto* proto) {
   dest->set_port(ntohs(r->id.idiag_dport));
 
   switch (proto->family()) {
-  case InetDiagMsgProto_AddressFamily_AF_INET:
+  case InetDiagMsgProto_AddressFamily_INET:
     src->set_ip(r->id.idiag_src, 4);
     dest->set_ip(r->id.idiag_dst, 4);
     break;
-  case InetDiagMsgProto_AddressFamily_AF_INET6:
+  case InetDiagMsgProto_AddressFamily_INET6:
     src->set_ip(r->id.idiag_src, 16);
     dest->set_ip(r->id.idiag_dst, 16);
     break;
-  case InetDiagMsgProto_AddressFamily_AF_UNSPEC:
+  case InetDiagMsgProto_AddressFamily_UNSPEC:
     // We don't know how to interpret the addresses, so leave them unset.
     // TODO(gfr) Log a warning here.
     break;
@@ -343,6 +344,10 @@ void TCPInfoPoller::on_close_wrapper(int protocol,
 
 void TCPInfoPoller::PollOnce() {
   using namespace std::placeholders;
+  // TODO(gfr) - Pass in update_record bound to `this`?
+  if (fetch_tcpinfo(update_record)) {
+    // TODO(gfr) LOG(FATAL) ??
+  }
   tracker_.VisitMissingRecords(std::bind(&TCPInfoPoller::on_close_wrapper,
                                          this, _1, _2, _3));
   tracker_.increment_round();
@@ -428,3 +433,16 @@ TCPState GetStateFromStr(const std::string& nlmsg) {
 
 mlab::netlink::TCPInfoPoller g_poller_;
 
+extern "C" {
+// Signature must match rtnl_filter_t.
+// All args must be non-null.
+int update_record(const struct sockaddr_nl *addr, struct nlmsghdr *nlh,
+                  void *arg) {
+  auto *diag_arg = (struct inet_diag_arg *)arg;
+  auto *msg = (struct inet_diag_msg *)NLMSG_DATA(nlh);
+  // This has to be tied to a specific instance of the TCPInfoPoller. 8-(
+  g_poller_.Stash(
+      msg->idiag_family, diag_arg->protocol, msg->id, nlh);
+  return 0;
+}
+}  // extern "C"

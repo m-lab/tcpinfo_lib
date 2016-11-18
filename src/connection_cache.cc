@@ -21,7 +21,7 @@
 
 extern "C" {
 #include <linux/inet_diag.h>
-#include <sys/socket.h>
+#include <sys/socket.h>  // For AF_INET
 }
 
 namespace mlab {

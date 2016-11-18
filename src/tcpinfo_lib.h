@@ -36,6 +36,18 @@ extern "C" {
 namespace mlab {
 namespace netlink {
 
+extern "C"
+// rtnl_filter_t function to handle each result, passed into fetch_tcpinfo()
+// function.
+int update_record(const struct sockaddr_nl *addr,
+                  struct nlmsghdr *nlh, void *arg);
+
+class TCPInfoPoller;
+namespace test {
+// Test support function that required friend status.
+void VisitAndIncrement(TCPInfoPoller* poller);
+}  // namespace test
+
 // Key interface elements:
 //  1. Poll all tcp connections, and maintain cache of measurements for each
 //     connection.
@@ -166,6 +178,11 @@ class TCPInfoPoller {
              const struct nlmsghdr* nlh);
 
  private:
+  friend void test::VisitAndIncrement(TCPInfoPoller* poller);
+
+  FRIEND_TEST(TCPInfoLib, Basic);
+  FRIEND_TEST(TCPInfoLib, CAdapters);
+  FRIEND_TEST(TCPInfoLib, OnClose);
   FRIEND_TEST(Poller, StashAndOnClose);
 
   // For testing purposes.

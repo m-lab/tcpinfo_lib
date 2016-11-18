@@ -82,10 +82,12 @@ enum TCPState {  //  from tcp_states.h
 
 message InetDiagMsgProto {
   enum AddressFamily {
+    // NOTE: these are equivalent to AF_... in socket.h, but cannot have the
+    // same names since those are macros and will cause collisions.
     // There are many other families, but for now we only care about these.
-    AF_UNSPEC = 0;
-    AF_INET = 2;
-    AF_INET6 = 10;
+    UNSPEC = 0;
+    INET = 2;
+    INET6 = 10;
   }
   // These are 8 bit unsigned.
   optional AddressFamily family = 1;

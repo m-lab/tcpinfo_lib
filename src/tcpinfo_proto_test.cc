@@ -403,7 +403,7 @@ std::string raw19(
 
 TEST(Parser, IPToString) {
   InetDiagMsgProto p4;
-  p4.set_family(InetDiagMsgProto_AddressFamily_AF_INET);
+  p4.set_family(InetDiagMsgProto_AddressFamily_INET);
   auto* sock_id = p4.mutable_sock_id();
   auto* src = sock_id->mutable_source();
   src->set_port(1234);
@@ -411,7 +411,7 @@ TEST(Parser, IPToString) {
   EXPECT_EQ(ToString(p4.sock_id().source()), "97.98.99.100:1234");
 
   InetDiagMsgProto p6;
-  p6.set_family(InetDiagMsgProto_AddressFamily_AF_INET6);
+  p6.set_family(InetDiagMsgProto_AddressFamily_INET6);
   auto* sock_id6 = p6.mutable_sock_id();
   auto* src6 = sock_id6->mutable_source();
   src6->set_port(5678);
@@ -529,9 +529,16 @@ void Print(const struct nlmsghdr* nlh) {
 }
 }  // anonymous namespace
 
-TEST(Poller, StashAndOnClose) {
-// Stash and onclose in another file.
+namespace test {
+using namespace std::placeholders;
+void VisitAndIncrement(TCPInfoPoller* poller) {
+  poller->GetTracker()->VisitMissingRecords(
+      std::bind(&TCPInfoPoller::on_close_wrapper, poller, _1, _2, _3));
+  poller->GetTracker()->increment_round();
+}
+}  // namespace test
 
+TEST(Poller, StashAndOnClose) {
   TCPInfoPoller p;
   p.OnClose(on_close, {mlab::netlink::TCPState::ESTABLISHED});
   p.OnNewState(on_new_state);  // always call for new states.
@@ -557,8 +564,8 @@ TEST(Poller, StashAndOnClose) {
   // All three of these are new states.
   EXPECT_EQ(on_new_state_count, 3);
 
-  // For now this just visits missing rounds, and increments round();
-  p.PollOnce();
+  // Visit stale records, and increment round;
+  test::VisitAndIncrement(&p);
   EXPECT_EQ(on_close_count, 0);
 
   // Try another round.  Same message should NOT trigger on_new_state.
@@ -570,8 +577,9 @@ TEST(Poller, StashAndOnClose) {
   }
   EXPECT_EQ(on_new_state_count, 3);
 
+  // Visit stale records, and increment round;
   // This one should cause the on_close_ to be invoked for two messages.
-  p.PollOnce();
+  test::VisitAndIncrement(&p);
   // We put in one ESTABLISHED, and one OTHER.  We should only see ESTABLISHED.
   EXPECT_EQ(on_close_count, 1);
   EXPECT_FALSE(new_msg_not_empty);  // OnClose should always have empty messages.
