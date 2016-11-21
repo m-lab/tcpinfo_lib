@@ -24,7 +24,7 @@
 
 #include "connection_cache.h"
 #include "tcpinfo.pb.h"
-#include "gtest/gtest_prod.h"
+#include "gtest_prod.h"  // Using local copy instead of library include.
 
 extern "C" {
 #include <linux/inet_diag.h>  // Should come from iproute2 submodule.

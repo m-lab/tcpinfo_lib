@@ -67,7 +67,7 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
 add_library(tcpinfo_lib
     ${SRC_DIR}/tcpinfo_lib.cc ${SRC_DIR}/tcpinfo_lib.h
     ${SRC_DIR}/tcpinfo_c_adapter.h ${SRC_DIR}/tcpinfo_c_adapter.c
-    ${PROTO_HDRS} ${PROTO_SRCS})
+    ${SRC_DIR}/gtest_prod.h ${PROTO_HDRS} ${PROTO_SRCS})
 add_dependencies(tcpinfo_lib iproute2)
 
 target_link_libraries(tcpinfo_lib
